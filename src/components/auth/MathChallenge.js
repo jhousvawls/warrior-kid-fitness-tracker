@@ -32,6 +32,11 @@ const MathChallenge = ({ onSuccess, onCancel }) => {
                 num2 = Math.floor(Math.random() * 10) + 1;
                 answer = num1 * num2;
                 break;
+            default:
+                num1 = Math.floor(Math.random() * 20) + 1;
+                num2 = Math.floor(Math.random() * 20) + 1;
+                answer = num1 + num2;
+                break;
         }
         
         setProblem({

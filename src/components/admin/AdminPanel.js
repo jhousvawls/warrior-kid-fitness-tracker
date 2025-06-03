@@ -4,7 +4,6 @@ import { dateHelpers } from '../../utils/dateHelpers';
 
 const AdminPanel = ({ onBack }) => {
     const [users, setUsers] = useState([]);
-    const [selectedUser, setSelectedUser] = useState(null);
     const [showConfirmDelete, setShowConfirmDelete] = useState(null);
     const [showUserDetails, setShowUserDetails] = useState(null);
 

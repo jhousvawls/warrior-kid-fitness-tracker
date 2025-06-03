@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { storage } from '../../utils/localStorage';
 import { dateHelpers } from '../../utils/dateHelpers';
 
@@ -7,11 +7,7 @@ const Leaderboard = ({ user, onBack }) => {
     const [monthlyLeaderboard, setMonthlyLeaderboard] = useState([]);
     const [activeTab, setActiveTab] = useState('weekly');
 
-    useEffect(() => {
-        loadLeaderboards();
-    }, []);
-
-    const loadLeaderboards = () => {
+    const loadLeaderboards = useCallback(() => {
         const users = storage.getUsers();
         const allWorkouts = [];
         
@@ -34,7 +30,13 @@ const Leaderboard = ({ user, onBack }) => {
         // Calculate monthly leaderboard (pull-up progress)
         const monthlyData = calculateMonthlyLeaderboard(users);
         setMonthlyLeaderboard(monthlyData);
-    };
+    }, []);
+
+    useEffect(() => {
+        loadLeaderboards();
+    }, [loadLeaderboards]);
+
+
 
     const calculateWeeklyLeaderboard = (users, allWorkouts) => {
         const weeklyStats = users.map(u => {

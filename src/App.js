@@ -66,14 +66,7 @@ const App = () => {
         setCurrentView('dashboard');
     };
 
-    const formatScreenTime = (minutes) => {
-        if (minutes < 60) {
-            return `${minutes} min`;
-        }
-        const hours = Math.floor(minutes / 60);
-        const remainingMinutes = minutes % 60;
-        return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
-    };
+
 
     // If no user is logged in, show login form
     if (!currentUser) {

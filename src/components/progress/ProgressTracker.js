@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { storage } from '../../utils/localStorage';
 import { dateHelpers } from '../../utils/dateHelpers';
 
@@ -8,11 +8,7 @@ const ProgressTracker = ({ user, onBack }) => {
     const [weeklyStats, setWeeklyStats] = useState({});
     const [monthlyStats, setMonthlyStats] = useState({});
 
-    useEffect(() => {
-        loadProgressData();
-    }, [user]);
-
-    const loadProgressData = () => {
+    const loadProgressData = useCallback(() => {
         const userWorkouts = storage.getWorkouts(user.id);
         const userPullupProgress = storage.getPullupProgress(user.id);
         
@@ -21,7 +17,13 @@ const ProgressTracker = ({ user, onBack }) => {
         
         calculateWeeklyStats(userWorkouts);
         calculateMonthlyStats(userWorkouts, userPullupProgress);
-    };
+    }, [user.id]);
+
+    useEffect(() => {
+        loadProgressData();
+    }, [loadProgressData]);
+
+
 
     const calculateWeeklyStats = (workouts) => {
         const thisWeekWorkouts = workouts.filter(w => dateHelpers.isThisWeek(w.date));

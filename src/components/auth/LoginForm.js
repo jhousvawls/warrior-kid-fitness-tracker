@@ -9,7 +9,7 @@ const LoginForm = ({ onLogin }) => {
         age: ''
     });
     const [isLogin, setIsLogin] = useState(true);
-    const [users, setUsers] = useState(storage.getUsers());
+    const [users] = useState(storage.getUsers());
 
     const handleInputChange = (e) => {
         setFormData({

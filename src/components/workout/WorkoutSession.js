@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { storage } from '../../utils/localStorage';
 import { dateHelpers } from '../../utils/dateHelpers';
 import exercises from '../../data/exercises';
@@ -44,30 +44,32 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
     const isLastExercise = currentExerciseIndex === exercises.length - 1;
     const isLastRound = currentRound === totalRounds;
 
-    useEffect(() => {
-        let interval;
-        if (isTimerRunning && timer > 0) {
-            interval = setInterval(() => {
-                setTimer(timer - 1);
-            }, 1000);
-        } else if (timer === 0 && isTimerRunning) {
-            setIsTimerRunning(false);
-            // Auto-complete timed exercises when timer reaches 0
-            if (currentExercise.type === 'time') {
-                handleExerciseComplete();
-            }
-        }
-        return () => clearInterval(interval);
-    }, [timer, isTimerRunning]);
+    const completeWorkout = useCallback(() => {
+        const workout = {
+            id: Date.now().toString(),
+            userId: user.id,
+            date: dateHelpers.getTodayString(),
+            exercises: completedExercises,
+            rounds: totalRounds,
+            completedAt: new Date().toISOString()
+        };
 
-    const startTimer = () => {
-        if (currentExercise.type === 'time') {
-            setTimer(currentExercise.target);
-            setIsTimerRunning(true);
-        }
-    };
+        // Save workout
+        storage.saveWorkout(workout);
 
-    const handleExerciseComplete = () => {
+        // Note: Screen time is already awarded after each cycle completion
+
+        // Save pull-up progress if any pull-ups were completed
+        const pullupData = completedExercises.filter(e => e.reps);
+        if (pullupData.length > 0) {
+            const totalPullups = pullupData.reduce((sum, e) => sum + e.reps, 0);
+            storage.savePullupProgress(user.id, totalPullups, dateHelpers.getTodayString());
+        }
+
+        onComplete();
+    }, [user.id, completedExercises, totalRounds, onComplete]);
+
+    const handleExerciseComplete = useCallback(() => {
         const exerciseData = {
             exerciseId: currentExercise.id,
             exerciseName: currentExercise.name,
@@ -134,32 +136,34 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
         }
 
         setPullupReps('');
-    };
+    }, [currentExercise, pullupReps, completedExercises, comboCount, isLastExercise, isLastRound, user.id, currentRound, currentExerciseIndex, completeWorkout]);
 
-    const completeWorkout = () => {
-        const workout = {
-            id: Date.now().toString(),
-            userId: user.id,
-            date: dateHelpers.getTodayString(),
-            exercises: completedExercises,
-            rounds: totalRounds,
-            completedAt: new Date().toISOString()
-        };
-
-        // Save workout
-        storage.saveWorkout(workout);
-
-        // Note: Screen time is already awarded after each cycle completion
-
-        // Save pull-up progress if any pull-ups were completed
-        const pullupData = completedExercises.filter(e => e.reps);
-        if (pullupData.length > 0) {
-            const totalPullups = pullupData.reduce((sum, e) => sum + e.reps, 0);
-            storage.savePullupProgress(user.id, totalPullups, dateHelpers.getTodayString());
+    useEffect(() => {
+        let interval;
+        if (isTimerRunning && timer > 0) {
+            interval = setInterval(() => {
+                setTimer(timer - 1);
+            }, 1000);
+        } else if (timer === 0 && isTimerRunning) {
+            setIsTimerRunning(false);
+            // Auto-complete timed exercises when timer reaches 0
+            if (currentExercise.type === 'time') {
+                handleExerciseComplete();
+            }
         }
+        return () => clearInterval(interval);
+    }, [timer, isTimerRunning, currentExercise.type, handleExerciseComplete]);
 
-        onComplete();
+    const startTimer = () => {
+        if (currentExercise.type === 'time') {
+            setTimer(currentExercise.target);
+            setIsTimerRunning(true);
+        }
     };
+
+
+
+
 
     const handleRestComplete = () => {
         setIsResting(false);

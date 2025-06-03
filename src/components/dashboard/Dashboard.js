@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { storage } from '../../utils/localStorage';
 import { dateHelpers } from '../../utils/dateHelpers';
 import exercises from '../../data/exercises';
@@ -6,22 +6,16 @@ import SuperheroAvatar from './SuperheroAvatar';
 
 const Dashboard = ({ user, onStartWorkout, onViewCompetition, onViewProgress }) => {
     const [screenTime, setScreenTime] = useState(0);
-    const [workouts, setWorkouts] = useState([]);
     const [weeklyProgress, setWeeklyProgress] = useState(0);
     const [todayWorkouts, setTodayWorkouts] = useState(0);
     const [superheroType, setSuperheroType] = useState('strength');
 
-    useEffect(() => {
-        loadUserData();
-    }, [user]);
-
-    const loadUserData = () => {
+    const loadUserData = useCallback(() => {
         const userScreenTime = storage.getScreenTime(user.id);
         const userWorkouts = storage.getWorkouts(user.id);
         const today = dateHelpers.getTodayString();
         
         setScreenTime(userScreenTime);
-        setWorkouts(userWorkouts);
         
         // Calculate weekly progress (5/7 days goal)
         const daysThisWeek = dateHelpers.getWorkoutDaysThisWeek(userWorkouts);
@@ -30,7 +24,13 @@ const Dashboard = ({ user, onStartWorkout, onViewCompetition, onViewProgress }) 
         // Count today's completed cycles
         const todayCycles = userWorkouts.filter(w => w.date === today).length;
         setTodayWorkouts(todayCycles);
-    };
+    }, [user.id]);
+
+    useEffect(() => {
+        loadUserData();
+    }, [loadUserData]);
+
+
 
     const formatScreenTime = (minutes) => {
         if (minutes < 60) {
@@ -41,15 +41,7 @@ const Dashboard = ({ user, onStartWorkout, onViewCompetition, onViewProgress }) 
         return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
     };
 
-    const getProgressPercentage = () => {
-        return Math.min((weeklyProgress / 5) * 100, 100);
-    };
 
-    const getProgressColor = () => {
-        if (weeklyProgress >= 5) return 'var(--success-green)';
-        if (weeklyProgress >= 3) return 'var(--amber-orange)';
-        return 'var(--warning-red)';
-    };
 
     return (
         <div className="main-content">
