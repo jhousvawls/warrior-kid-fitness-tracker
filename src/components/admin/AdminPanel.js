@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { storage } from '../../utils/localStorage.js';
-import { dateHelpers } from '../../utils/dateHelpers.js';
+import { storage } from '../../utils/localStorage';
+import { dateHelpers } from '../../utils/dateHelpers';
 
 const AdminPanel = ({ onBack }) => {
     const [users, setUsers] = useState([]);

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { storage } from '../../utils/localStorage.js';
-import { dateHelpers } from '../../utils/dateHelpers.js';
-import exercises from '../../data/exercises.js';
-import SuperheroAvatar from './SuperheroAvatar.js';
+import { storage } from '../../utils/localStorage';
+import { dateHelpers } from '../../utils/dateHelpers';
+import exercises from '../../data/exercises';
+import SuperheroAvatar from './SuperheroAvatar';
 
 const Dashboard = ({ user, onStartWorkout, onViewCompetition, onViewProgress }) => {
     const [screenTime, setScreenTime] = useState(0);

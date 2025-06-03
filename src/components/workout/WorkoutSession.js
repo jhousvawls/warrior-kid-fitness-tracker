@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { storage } from '../../utils/localStorage.js';
-import { dateHelpers } from '../../utils/dateHelpers.js';
-import exercises from '../../data/exercises.js';
+import { storage } from '../../utils/localStorage';
+import { dateHelpers } from '../../utils/dateHelpers';
+import exercises from '../../data/exercises';
 
 // Power-up messages for motivation
 const POWER_UP_MESSAGES = [

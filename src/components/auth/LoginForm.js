@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { storage } from '../../utils/localStorage.js';
-import MathChallenge from './MathChallenge.js';
+import { storage } from '../../utils/localStorage';
+import MathChallenge from './MathChallenge';
 
 const LoginForm = ({ onLogin }) => {
     const [showMathChallenge, setShowMathChallenge] = useState(false);
