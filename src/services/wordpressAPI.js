@@ -59,13 +59,14 @@ export const wordpressAPI = {
     }
   },
 
-  // Get page by slug
+  // Get page by slug with ACF fields
   getPageBySlug: async (slug) => {
     try {
       const response = await wpAPI.get('/pages', {
         params: {
           slug: slug,
-          _embed: true
+          _embed: true,
+          acf_format: 'standard' // Include ACF fields
         }
       });
       
@@ -192,6 +193,26 @@ export const wpUtils = {
       return categories.map(cat => cat.name);
     }
     return [];
+  },
+
+  // Get ACF field value with fallback
+  getACFField: (page, fieldName, fallback = '') => {
+    return page.acf?.[fieldName] || fallback;
+  },
+
+  // Get ACF repeater field
+  getACFRepeater: (page, fieldName, fallback = []) => {
+    const repeater = page.acf?.[fieldName];
+    return Array.isArray(repeater) ? repeater : fallback;
+  },
+
+  // Get ACF image field
+  getACFImage: (page, fieldName, size = 'medium_large') => {
+    const image = page.acf?.[fieldName];
+    if (typeof image === 'object' && image?.sizes) {
+      return image.sizes[size] || image.url;
+    }
+    return typeof image === 'string' ? image : null;
   }
 };
 

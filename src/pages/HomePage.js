@@ -4,24 +4,83 @@ import { wordpressAPI, wpUtils } from '../services/wordpressAPI';
 
 const HomePage = () => {
     const [featuredPosts, setFeaturedPosts] = useState([]);
+    const [pageContent, setPageContent] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const fetchFeaturedPosts = async () => {
+        const fetchHomePageData = async () => {
             try {
-                const posts = await wordpressAPI.getFeaturedPosts(3);
+                // Fetch homepage content and featured posts in parallel
+                const [posts, homePage] = await Promise.all([
+                    wordpressAPI.getFeaturedPosts(3),
+                    wordpressAPI.getPageBySlug('home')
+                ]);
                 setFeaturedPosts(posts);
+                setPageContent(homePage);
             } catch (err) {
-                setError('Failed to load featured posts');
+                setError('Failed to load page content');
                 console.error(err);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchFeaturedPosts();
+        fetchHomePageData();
     }, []);
+
+    // Default content fallbacks
+    const defaultContent = {
+        hero_title: '🏆 Warrior Kid Fitness Tracker',
+        hero_subtitle: 'Build discipline, strength, and character through fun fitness challenges designed for young warriors aged 5-18.',
+        hero_primary_button_text: '🚀 Start Training Now',
+        hero_primary_button_link: '/app',
+        hero_secondary_button_text: 'Learn More',
+        hero_secondary_button_link: '/about',
+        how_it_works_title: 'How It Works',
+        how_it_works_features: [
+            {
+                icon: '🎯',
+                title: 'Simple Login',
+                description: 'Kids create their warrior profile with just a name and age. A fun math challenge keeps it secure and engaging.',
+                color: 'navy-blue'
+            },
+            {
+                icon: '💪',
+                title: 'Fun Workouts',
+                description: 'Complete 3 rounds of bodyweight exercises with animated guides, timers, and motivational celebrations.',
+                color: 'forest-green'
+            },
+            {
+                icon: '🏆',
+                title: 'Earn Rewards',
+                description: 'Earn screen time, track progress, compete on leaderboards, and watch your warrior character grow stronger.',
+                color: 'amber-orange'
+            }
+        ],
+        cta_title: 'Ready to Start Your Warrior Journey?',
+        cta_description: 'Join thousands of young warriors building discipline, strength, and character through fitness.',
+        cta_button_text: '🚀 Begin Training',
+        cta_button_link: '/app'
+    };
+
+    // Use ACF fields if available, otherwise use defaults
+    const content = pageContent?.acf || defaultContent;
+
+    if (loading) {
+        return (
+            <div style={{ 
+                padding: '4rem 2rem', 
+                textAlign: 'center',
+                minHeight: '50vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }}>
+                <p>Loading...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="homepage">
@@ -43,7 +102,7 @@ const HomePage = () => {
                         marginBottom: '1.5rem',
                         textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
                     }}>
-                        🏆 Warrior Kid Fitness Tracker
+                        {wpUtils.getACFField(pageContent, 'hero_title', defaultContent.hero_title)}
                     </h1>
                     <p style={{
                         fontSize: '1.3rem',
@@ -51,11 +110,11 @@ const HomePage = () => {
                         lineHeight: '1.6',
                         opacity: '0.95'
                     }}>
-                        Build discipline, strength, and character through fun fitness challenges designed for young warriors aged 5-18.
+                        {wpUtils.getACFField(pageContent, 'hero_subtitle', defaultContent.hero_subtitle)}
                     </p>
                     <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                         <Link 
-                            to="/app" 
+                            to={wpUtils.getACFField(pageContent, 'hero_primary_button_link', defaultContent.hero_primary_button_link)} 
                             className="btn btn-accent"
                             style={{
                                 fontSize: '1.2rem',
@@ -64,10 +123,10 @@ const HomePage = () => {
                                 boxShadow: '0 4px 15px rgba(217, 119, 6, 0.3)'
                             }}
                         >
-                            🚀 Start Training Now
+                            {wpUtils.getACFField(pageContent, 'hero_primary_button_text', defaultContent.hero_primary_button_text)}
                         </Link>
                         <Link 
-                            to="/about" 
+                            to={wpUtils.getACFField(pageContent, 'hero_secondary_button_link', defaultContent.hero_secondary_button_link)} 
                             className="btn btn-secondary"
                             style={{
                                 fontSize: '1.1rem',
@@ -78,7 +137,7 @@ const HomePage = () => {
                                 color: 'white'
                             }}
                         >
-                            Learn More
+                            {wpUtils.getACFField(pageContent, 'hero_secondary_button_text', defaultContent.hero_secondary_button_text)}
                         </Link>
                     </div>
                 </div>
@@ -96,7 +155,7 @@ const HomePage = () => {
                         color: 'var(--navy-blue)',
                         marginBottom: '3rem'
                     }}>
-                        How It Works
+                        {wpUtils.getACFField(pageContent, 'how_it_works_title', defaultContent.how_it_works_title)}
                     </h2>
                     
                     <div style={{
@@ -105,50 +164,22 @@ const HomePage = () => {
                         gap: '2rem',
                         marginBottom: '3rem'
                     }}>
-                        <div className="feature-card" style={{
-                            background: 'white',
-                            padding: '2rem',
-                            borderRadius: '12px',
-                            textAlign: 'center',
-                            boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
-                            border: '2px solid var(--navy-blue)'
-                        }}>
-                            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎯</div>
-                            <h3 style={{ color: 'var(--navy-blue)', marginBottom: '1rem' }}>Simple Login</h3>
-                            <p style={{ color: 'var(--charcoal-gray)', lineHeight: '1.6' }}>
-                                Kids create their warrior profile with just a name and age. A fun math challenge keeps it secure and engaging.
-                            </p>
-                        </div>
-
-                        <div className="feature-card" style={{
-                            background: 'white',
-                            padding: '2rem',
-                            borderRadius: '12px',
-                            textAlign: 'center',
-                            boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
-                            border: '2px solid var(--forest-green)'
-                        }}>
-                            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💪</div>
-                            <h3 style={{ color: 'var(--forest-green)', marginBottom: '1rem' }}>Fun Workouts</h3>
-                            <p style={{ color: 'var(--charcoal-gray)', lineHeight: '1.6' }}>
-                                Complete 3 rounds of bodyweight exercises with animated guides, timers, and motivational celebrations.
-                            </p>
-                        </div>
-
-                        <div className="feature-card" style={{
-                            background: 'white',
-                            padding: '2rem',
-                            borderRadius: '12px',
-                            textAlign: 'center',
-                            boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
-                            border: '2px solid var(--amber-orange)'
-                        }}>
-                            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏆</div>
-                            <h3 style={{ color: 'var(--amber-orange)', marginBottom: '1rem' }}>Earn Rewards</h3>
-                            <p style={{ color: 'var(--charcoal-gray)', lineHeight: '1.6' }}>
-                                Earn screen time, track progress, compete on leaderboards, and watch your warrior character grow stronger.
-                            </p>
-                        </div>
+                        {wpUtils.getACFRepeater(pageContent, 'how_it_works_features', defaultContent.how_it_works_features).map((feature, index) => (
+                            <div key={index} className="feature-card" style={{
+                                background: 'white',
+                                padding: '2rem',
+                                borderRadius: '12px',
+                                textAlign: 'center',
+                                boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+                                border: `2px solid var(--${feature.color})`
+                            }}>
+                                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>{feature.icon}</div>
+                                <h3 style={{ color: `var(--${feature.color})`, marginBottom: '1rem' }}>{feature.title}</h3>
+                                <p style={{ color: 'var(--charcoal-gray)', lineHeight: '1.6' }}>
+                                    {feature.description}
+                                </p>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </section>
@@ -279,17 +310,17 @@ const HomePage = () => {
                         marginBottom: '1.5rem',
                         textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
                     }}>
-                        Ready to Start Your Warrior Journey?
+                        {wpUtils.getACFField(pageContent, 'cta_title', defaultContent.cta_title)}
                     </h2>
                     <p style={{
                         fontSize: '1.2rem',
                         marginBottom: '2rem',
                         opacity: '0.95'
                     }}>
-                        Join thousands of young warriors building discipline, strength, and character through fitness.
+                        {wpUtils.getACFField(pageContent, 'cta_description', defaultContent.cta_description)}
                     </p>
                     <Link 
-                        to="/app" 
+                        to={wpUtils.getACFField(pageContent, 'cta_button_link', defaultContent.cta_button_link)} 
                         className="btn btn-accent"
                         style={{
                             fontSize: '1.3rem',
@@ -298,7 +329,7 @@ const HomePage = () => {
                             boxShadow: '0 4px 15px rgba(217, 119, 6, 0.3)'
                         }}
                     >
-                        🚀 Begin Training
+                        {wpUtils.getACFField(pageContent, 'cta_button_text', defaultContent.cta_button_text)}
                     </Link>
                 </div>
             </section>
