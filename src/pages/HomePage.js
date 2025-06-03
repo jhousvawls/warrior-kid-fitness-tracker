@@ -64,9 +64,6 @@ const HomePage = () => {
         cta_button_link: '/app'
     };
 
-    // Use ACF fields if available, otherwise use defaults
-    const content = pageContent?.acf || defaultContent;
-
     if (loading) {
         return (
             <div style={{ 
