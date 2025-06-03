@@ -33,10 +33,10 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
     const [pullupReps, setPullupReps] = useState('');
     const [currentRound, setCurrentRound] = useState(1);
     const [totalRounds] = useState(3); // Default to 3 rounds
-    const [showCelebration, setShowCelebration] = useState(false);
+    const [cardCelebrating, setCardCelebrating] = useState(false);
     const [celebrationMessage, setCelebrationMessage] = useState('');
     const [powerUpMessage, setPowerUpMessage] = useState('');
-    const [showPowerUp, setShowPowerUp] = useState(false);
+    const [showCardPowerUp, setShowCardPowerUp] = useState(false);
     const [comboCount, setComboCount] = useState(0);
     const [isOnFire, setIsOnFire] = useState(false);
 
@@ -84,10 +84,10 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
 
         setCompletedExercises([...completedExercises, exerciseData]);
 
-        // Trigger celebration animation
+        // Trigger inline celebration animation
         const randomCelebration = COMPLETION_CELEBRATIONS[Math.floor(Math.random() * COMPLETION_CELEBRATIONS.length)];
         setCelebrationMessage(randomCelebration);
-        setShowCelebration(true);
+        setCardCelebrating(true);
         
         // Update combo count and check for power-ups
         const newComboCount = comboCount + 1;
@@ -97,19 +97,21 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
         if (newComboCount >= 3) {
             const randomPowerUp = POWER_UP_MESSAGES[Math.floor(Math.random() * POWER_UP_MESSAGES.length)];
             setPowerUpMessage(randomPowerUp);
-            setShowPowerUp(true);
+            setShowCardPowerUp(true);
             setIsOnFire(true);
             
             // Reset power-up after 3 seconds
             setTimeout(() => {
-                setShowPowerUp(false);
+                setShowCardPowerUp(false);
                 setIsOnFire(false);
+                setPowerUpMessage('');
             }, 3000);
         }
         
         // Reset celebration after 2 seconds
         setTimeout(() => {
-            setShowCelebration(false);
+            setCardCelebrating(false);
+            setCelebrationMessage('');
         }, 2000);
 
         if (isLastExercise) {
@@ -319,59 +321,7 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
 
     return (
         <div className="workout-session">
-            {/* Celebration Overlay */}
-            {showCelebration && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'rgba(0, 0, 0, 0.8)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 1000,
-                    animation: 'celebration-burst 2s ease-out'
-                }}>
-                    <div style={{
-                        background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                        color: 'white',
-                        padding: '3rem',
-                        borderRadius: '20px',
-                        textAlign: 'center',
-                        fontSize: '2rem',
-                        fontWeight: 'bold',
-                        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
-                        transform: 'scale(1.1)',
-                        animation: 'celebration-bounce 0.6s ease-out'
-                    }}>
-                        {celebrationMessage}
-                    </div>
-                </div>
-            )}
 
-            {/* Power-Up Overlay */}
-            {showPowerUp && (
-                <div style={{
-                    position: 'fixed',
-                    top: '20%',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    background: 'linear-gradient(135deg, #dc2626, #991b1b)',
-                    color: 'white',
-                    padding: '2rem 3rem',
-                    borderRadius: '15px',
-                    textAlign: 'center',
-                    fontSize: '1.5rem',
-                    fontWeight: 'bold',
-                    zIndex: 999,
-                    boxShadow: '0 15px 30px rgba(220, 38, 38, 0.4)',
-                    animation: 'power-up-glow 3s ease-in-out'
-                }}>
-                    {powerUpMessage}
-                </div>
-            )}
 
             {/* Combo Counter */}
             {comboCount > 0 && (
@@ -423,7 +373,13 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
             </div>
 
             {/* Current Exercise */}
-            <div className="exercise-card">
+            <div className="exercise-card" style={{
+                border: cardCelebrating ? '3px solid var(--success-green)' : (showCardPowerUp ? '3px solid #dc2626' : ''),
+                boxShadow: cardCelebrating ? '0 0 20px rgba(16, 185, 129, 0.5)' : (showCardPowerUp ? '0 0 25px rgba(220, 38, 38, 0.6)' : ''),
+                transform: cardCelebrating ? 'scale(1.02)' : 'scale(1)',
+                transition: 'all 0.3s ease-in-out',
+                background: cardCelebrating ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(255, 255, 255, 0.95))' : (showCardPowerUp ? 'linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(255, 255, 255, 0.95))' : '')
+            }}>
                 {/* Large Exercise Avatar */}
                 <div style={{
                     textAlign: 'center',
@@ -534,20 +490,23 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
                     </button>
                 </div>
 
-                {/* Encouragement */}
+                {/* Dynamic Encouragement */}
                 <div style={{ 
                     marginTop: '1rem',
                     padding: '1rem',
-                    background: 'var(--light-gray)',
+                    background: cardCelebrating ? 'linear-gradient(135deg, var(--success-green), #059669)' : (showCardPowerUp ? 'linear-gradient(135deg, #dc2626, #991b1b)' : 'var(--light-gray)'),
                     borderRadius: '8px',
-                    textAlign: 'center'
+                    textAlign: 'center',
+                    color: (cardCelebrating || showCardPowerUp) ? 'white' : 'var(--forest-green)',
+                    transform: cardCelebrating ? 'scale(1.05)' : 'scale(1)',
+                    transition: 'all 0.3s ease-in-out'
                 }}>
                     <p style={{ 
-                        color: 'var(--forest-green)', 
                         fontWeight: 'bold',
-                        margin: 0
+                        margin: 0,
+                        fontSize: (cardCelebrating || showCardPowerUp) ? '1.1rem' : '1rem'
                     }}>
-                        💪 You've got this, warrior! Keep pushing!
+                        {celebrationMessage || powerUpMessage || '💪 You\'ve got this, warrior! Keep pushing!'}
                     </p>
                 </div>
             </div>
