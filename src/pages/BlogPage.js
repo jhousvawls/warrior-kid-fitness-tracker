@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { wordpressAPI, wpUtils } from '../services/wordpressAPI';
 
@@ -12,12 +12,7 @@ const BlogPage = () => {
     const [categories, setCategories] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState('');
 
-    useEffect(() => {
-        fetchPosts();
-        fetchCategories();
-    }, [currentPage, selectedCategory]);
-
-    const fetchPosts = async () => {
+    const fetchPosts = useCallback(async () => {
         setLoading(true);
         try {
             const params = {
@@ -38,7 +33,12 @@ const BlogPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentPage, selectedCategory]);
+
+    useEffect(() => {
+        fetchPosts();
+        fetchCategories();
+    }, [currentPage, selectedCategory, fetchPosts]);
 
     const fetchCategories = async () => {
         try {

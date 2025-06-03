@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { wordpressAPI, wpUtils } from '../services/wordpressAPI';
 
@@ -9,11 +9,7 @@ const BlogPost = () => {
     const [error, setError] = useState(null);
     const [relatedPosts, setRelatedPosts] = useState([]);
 
-    useEffect(() => {
-        fetchPost();
-    }, [slug]);
-
-    const fetchPost = async () => {
+    const fetchPost = useCallback(async () => {
         setLoading(true);
         try {
             const postData = await wordpressAPI.getPostBySlug(slug);
@@ -34,7 +30,11 @@ const BlogPost = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [slug]);
+
+    useEffect(() => {
+        fetchPost();
+    }, [fetchPost]);
 
     // Mock post data for when WordPress isn't available
     const getMockPost = (slug) => {
