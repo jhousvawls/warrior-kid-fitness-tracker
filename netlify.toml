@@ -1,0 +1,11 @@
+[build]
+  publish = "build"
+  command = "npm run build"
+
+[build.environment]
+  REACT_APP_WP_API_URL = "https://fitness4.wpenginepowered.com/wp-json/wp/v2"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
