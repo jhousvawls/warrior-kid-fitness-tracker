@@ -211,7 +211,7 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
                             color: 'var(--charcoal-gray)'
                         }}>
                             {isLastExercise && !isLastRound 
-                                ? `Round ${currentRound - 1} Complete! 🎉`
+                                ? `Round ${currentRound} Complete! 🎉`
                                 : 'Quick Break Time'
                             }
                         </p>
@@ -253,7 +253,7 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
                             lineHeight: '1.4'
                         }}>
                             {isLastExercise && !isLastRound 
-                                ? `Awesome work! Get ready for round ${currentRound}! 💪`
+                                ? `Awesome work! Get ready for round ${currentRound + 1}! 💪`
                                 : 'Take a deep breath and get ready for the next exercise! 🌟'
                             }
                         </p>
@@ -270,8 +270,7 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
                             textAlign: 'center',
                             fontWeight: 'bold',
                             fontSize: '1.1rem',
-                            boxShadow: '0 6px 20px rgba(217, 119, 6, 0.3)',
-                            animation: 'pulse 2s infinite'
+                            boxShadow: '0 6px 20px rgba(217, 119, 6, 0.3)'
                         }}>
                             🎉 CYCLE COMPLETE! 🎉<br/>
                             <span style={{ fontSize: '1.3rem' }}>+10 minutes screen time earned! 🎮</span>
@@ -336,7 +335,6 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
                     fontSize: '1rem',
                     fontWeight: 'bold',
                     zIndex: 998,
-                    animation: isOnFire ? 'fire-pulse 1s infinite' : 'none',
                     boxShadow: isOnFire ? '0 0 20px rgba(220, 38, 38, 0.6)' : '0 4px 15px rgba(30, 58, 138, 0.3)'
                 }}>
                     {isOnFire ? '🔥' : '⚡'} {comboCount} COMBO!
@@ -373,13 +371,7 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
             </div>
 
             {/* Current Exercise */}
-            <div className="exercise-card" style={{
-                border: cardCelebrating ? '3px solid var(--success-green)' : (showCardPowerUp ? '3px solid #dc2626' : ''),
-                boxShadow: cardCelebrating ? '0 0 20px rgba(16, 185, 129, 0.5)' : (showCardPowerUp ? '0 0 25px rgba(220, 38, 38, 0.6)' : ''),
-                transform: cardCelebrating ? 'scale(1.02)' : 'scale(1)',
-                transition: 'all 0.3s ease-in-out',
-                background: cardCelebrating ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(255, 255, 255, 0.95))' : (showCardPowerUp ? 'linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(255, 255, 255, 0.95))' : '')
-            }}>
+            <div className="exercise-card">
                 {/* Large Exercise Avatar */}
                 <div style={{
                     textAlign: 'center',
@@ -388,8 +380,7 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
                     <div style={{
                         fontSize: '4rem',
                         marginBottom: '1rem',
-                        filter: 'drop-shadow(0 0 10px rgba(255, 193, 7, 0.6))',
-                        animation: 'exercise-bounce 2s ease-in-out infinite'
+                        filter: 'drop-shadow(0 0 10px rgba(255, 193, 7, 0.6))'
                     }}>
                         {currentExercise.avatar}
                     </div>
@@ -494,17 +485,15 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
                 <div style={{ 
                     marginTop: '1rem',
                     padding: '1rem',
-                    background: cardCelebrating ? 'linear-gradient(135deg, var(--success-green), #059669)' : (showCardPowerUp ? 'linear-gradient(135deg, #dc2626, #991b1b)' : 'var(--light-gray)'),
+                    background: 'var(--light-gray)',
                     borderRadius: '8px',
                     textAlign: 'center',
-                    color: (cardCelebrating || showCardPowerUp) ? 'white' : 'var(--forest-green)',
-                    transform: cardCelebrating ? 'scale(1.05)' : 'scale(1)',
-                    transition: 'all 0.3s ease-in-out'
+                    color: 'var(--forest-green)'
                 }}>
                     <p style={{ 
                         fontWeight: 'bold',
                         margin: 0,
-                        fontSize: (cardCelebrating || showCardPowerUp) ? '1.1rem' : '1rem'
+                        fontSize: '1rem'
                     }}>
                         {celebrationMessage || powerUpMessage || '💪 You\'ve got this, warrior! Keep pushing!'}
                     </p>
