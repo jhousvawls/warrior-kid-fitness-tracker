@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // WordPress API base URL - this will be your WP Engine headless WordPress URL
-const WP_API_BASE_URL = process.env.REACT_APP_WP_API_URL || 'https://your-wp-site.wpengine.com/wp-json/wp/v2';
+const WP_API_BASE_URL = process.env.REACT_APP_WP_API_URL || 'https://fitness4.wpenginepowered.com/wp-json/wp/v2';
 
 // Create axios instance with default config
 const wpAPI = axios.create({
@@ -197,12 +197,12 @@ export const wpUtils = {
 
   // Get ACF field value with fallback
   getACFField: (page, fieldName, fallback = '') => {
-    return page.acf?.[fieldName] || fallback;
+    return page?.acf?.[fieldName] || fallback;
   },
 
   // Get ACF repeater field
   getACFRepeater: (page, fieldName, fallback = []) => {
-    const repeater = page.acf?.[fieldName];
+    const repeater = page?.acf?.[fieldName];
     return Array.isArray(repeater) ? repeater : fallback;
   },
 
