@@ -25,16 +25,29 @@ const FitnessApp = () => {
 
     useEffect(() => {
         // Check for existing logged-in user
-        const user = storage.getCurrentUser();
-        if (user) {
-            setCurrentUser(user);
-            updateScreenTime(user.id);
-        }
+        const loadCurrentUser = async () => {
+            try {
+                const user = await storage.getCurrentUser();
+                if (user) {
+                    setCurrentUser(user);
+                    await updateScreenTime(user.id);
+                }
+            } catch (error) {
+                console.error('Error loading current user:', error);
+            }
+        };
+        
+        loadCurrentUser();
     }, []);
 
-    const updateScreenTime = (userId) => {
-        const userScreenTime = storage.getScreenTime(userId);
-        setScreenTime(userScreenTime);
+    const updateScreenTime = async (userId) => {
+        try {
+            const userScreenTime = await storage.getScreenTime(userId);
+            setScreenTime(userScreenTime);
+        } catch (error) {
+            console.error('Error updating screen time:', error);
+            setScreenTime(0);
+        }
     };
 
     const handleLogin = (user) => {

@@ -6,29 +6,65 @@ const AdminPanel = ({ onBack }) => {
     const [users, setUsers] = useState([]);
     const [showConfirmDelete, setShowConfirmDelete] = useState(null);
     const [showUserDetails, setShowUserDetails] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [migrating, setMigrating] = useState(false);
+    const [migrationStatus, setMigrationStatus] = useState('');
 
     useEffect(() => {
         loadUsers();
     }, []);
 
-    const loadUsers = () => {
-        const allUsers = storage.getUsers();
-        const usersWithStats = allUsers.map(user => {
-            const workouts = storage.getWorkouts(user.id);
-            const screenTime = storage.getScreenTime(user.id);
-            const pullupProgress = storage.getPullupProgress(user.id);
-            
-            return {
-                ...user,
-                totalWorkouts: workouts.length,
-                screenTime,
-                totalPullups: pullupProgress.reduce((sum, p) => sum + p.reps, 0),
-                lastActive: workouts.length > 0 
-                    ? workouts[workouts.length - 1].date 
-                    : user.createdAt.split('T')[0]
-            };
-        });
-        setUsers(usersWithStats);
+    const loadUsers = async () => {
+        try {
+            setLoading(true);
+            const allUsers = await storage.getUsers();
+            const usersWithStats = await Promise.all(allUsers.map(async (user) => {
+                const workouts = await storage.getWorkouts(user.id);
+                const screenTime = await storage.getScreenTime(user.id);
+                const pullupProgress = await storage.getPullupProgress(user.id);
+                
+                return {
+                    ...user,
+                    totalWorkouts: workouts.length,
+                    screenTime,
+                    totalPullups: pullupProgress.reduce((sum, p) => sum + p.reps, 0),
+                    lastActive: workouts.length > 0 
+                        ? workouts[workouts.length - 1].date 
+                        : user.createdAt.split('T')[0]
+                };
+            }));
+            setUsers(usersWithStats);
+        } catch (error) {
+            console.error('Error loading users:', error);
+            setUsers([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const migrateToWordPress = async () => {
+        setMigrating(true);
+        setMigrationStatus('Starting migration...');
+        
+        try {
+            const success = await storage.migrateToWordPress();
+            if (success) {
+                setMigrationStatus('✅ Migration completed successfully!');
+                setTimeout(() => {
+                    setMigrationStatus('');
+                    loadUsers(); // Reload to show updated data
+                }, 3000);
+            } else {
+                setMigrationStatus('❌ Migration failed. Check console for details.');
+                setTimeout(() => setMigrationStatus(''), 5000);
+            }
+        } catch (error) {
+            console.error('Migration error:', error);
+            setMigrationStatus('❌ Migration failed with error. Check console for details.');
+            setTimeout(() => setMigrationStatus(''), 5000);
+        } finally {
+            setMigrating(false);
+        }
     };
 
     const deleteUser = (userId) => {
@@ -180,6 +216,52 @@ const AdminPanel = ({ onBack }) => {
                             {formatScreenTime(users.reduce((sum, u) => sum + u.screenTime, 0))}
                         </h3>
                         <p style={{ color: 'var(--charcoal-gray)', margin: 0 }}>Total Screen Time</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* WordPress Migration */}
+            <div className="card">
+                <h2 className="card-title">🔄 WordPress Migration</h2>
+                <p style={{ color: 'var(--charcoal-gray)', marginBottom: '1.5rem' }}>
+                    Migrate all localStorage data to WordPress for permanent storage and cross-device access.
+                </p>
+                
+                {migrationStatus && (
+                    <div style={{
+                        background: migrationStatus.includes('✅') ? '#d1fae5' : '#fee2e2',
+                        border: `1px solid ${migrationStatus.includes('✅') ? '#a7f3d0' : '#fca5a5'}`,
+                        borderRadius: '8px',
+                        padding: '1rem',
+                        marginBottom: '1.5rem'
+                    }}>
+                        <p style={{ 
+                            color: migrationStatus.includes('✅') ? '#065f46' : '#dc2626',
+                            fontWeight: 'bold',
+                            margin: 0
+                        }}>
+                            {migrationStatus}
+                        </p>
+                    </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <button
+                        className="btn btn-primary"
+                        onClick={migrateToWordPress}
+                        disabled={migrating}
+                        style={{
+                            opacity: migrating ? 0.6 : 1,
+                            cursor: migrating ? 'not-allowed' : 'pointer'
+                        }}
+                    >
+                        {migrating ? '⏳ Migrating...' : '🚀 Migrate to WordPress'}
+                    </button>
+                    
+                    <div style={{ fontSize: '0.9rem', color: 'var(--charcoal-gray)' }}>
+                        <p style={{ margin: 0 }}>
+                            This will copy all user data, workouts, and progress to your WordPress backend.
+                        </p>
                     </div>
                 </div>
             </div>

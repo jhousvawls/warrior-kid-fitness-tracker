@@ -42,7 +42,7 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
     const isLastExercise = currentExerciseIndex === exercises.length - 1;
     const isLastRound = currentRound === totalRounds;
 
-    const completeWorkout = useCallback(() => {
+    const completeWorkout = useCallback(async () => {
         const workout = {
             id: Date.now().toString(),
             userId: user.id,
@@ -53,18 +53,24 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
         };
 
         // Save workout
-        storage.saveWorkout(workout);
+        try {
+            await storage.saveWorkout(workout);
 
-        // Note: Screen time is already awarded after each cycle completion
+            // Note: Screen time is already awarded after each cycle completion
 
-        // Save pull-up progress if any pull-ups were completed
-        const pullupData = completedExercises.filter(e => e.reps);
-        if (pullupData.length > 0) {
-            const totalPullups = pullupData.reduce((sum, e) => sum + e.reps, 0);
-            storage.savePullupProgress(user.id, totalPullups, dateHelpers.getTodayString());
+            // Save pull-up progress if any pull-ups were completed
+            const pullupData = completedExercises.filter(e => e.reps);
+            if (pullupData.length > 0) {
+                const totalPullups = pullupData.reduce((sum, e) => sum + e.reps, 0);
+                await storage.savePullupProgress(user.id, totalPullups, dateHelpers.getTodayString());
+            }
+
+            onComplete();
+        } catch (error) {
+            console.error('Error saving workout:', error);
+            // Still complete the workout even if saving fails
+            onComplete();
         }
-
-        onComplete();
     }, [user.id, completedExercises, totalRounds, onComplete]);
 
     const handleExerciseComplete = useCallback(() => {

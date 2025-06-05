@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { storage } from '../../utils/localStorage';
 import MathChallenge from './MathChallenge';
 
@@ -9,7 +9,25 @@ const LoginForm = ({ onLogin }) => {
         age: ''
     });
     const [isLogin, setIsLogin] = useState(true);
-    const [users] = useState(storage.getUsers());
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        const loadUsers = async () => {
+            try {
+                const loadedUsers = await storage.getUsers();
+                setUsers(loadedUsers);
+            } catch (error) {
+                console.error('Error loading users:', error);
+                setUsers([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+        
+        loadUsers();
+    }, []);
 
     const handleInputChange = (e) => {
         setFormData({
@@ -30,22 +48,30 @@ const LoginForm = ({ onLogin }) => {
         }
     };
 
-    const handleMathSuccess = () => {
-        // Create or find user
-        let user = users.find(u => u.name.toLowerCase() === formData.name.toLowerCase());
-        
-        if (!user) {
-            user = {
-                id: Date.now().toString(),
-                name: formData.name.trim(),
-                age: parseInt(formData.age),
-                createdAt: new Date().toISOString()
-            };
-            storage.saveUser(user);
+    const handleMathSuccess = async () => {
+        setSaving(true);
+        try {
+            // Create or find user
+            let user = users.find(u => u.name.toLowerCase() === formData.name.toLowerCase());
+            
+            if (!user) {
+                user = {
+                    id: Date.now().toString(),
+                    name: formData.name.trim(),
+                    age: parseInt(formData.age),
+                    createdAt: new Date().toISOString()
+                };
+                await storage.saveUser(user);
+            }
+            
+            storage.setCurrentUser(user.id);
+            onLogin(user);
+        } catch (error) {
+            console.error('Error saving user:', error);
+            alert('Failed to save user data. Please try again.');
+        } finally {
+            setSaving(false);
         }
-        
-        storage.setCurrentUser(user.id);
-        onLogin(user);
     };
 
     const handleMathCancel = () => {
@@ -57,10 +83,50 @@ const LoginForm = ({ onLogin }) => {
         return (
             <div className="auth-container">
                 <div className="auth-form">
+                    {saving && (
+                        <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: 'rgba(255,255,255,0.9)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 1000,
+                            borderRadius: '12px'
+                        }}>
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⚡</div>
+                                <p style={{ color: 'var(--navy-blue)', fontWeight: 'bold' }}>
+                                    Saving warrior data...
+                                </p>
+                            </div>
+                        </div>
+                    )}
                     <MathChallenge 
                         onSuccess={handleMathSuccess}
                         onCancel={handleMathCancel}
                     />
+                </div>
+            </div>
+        );
+    }
+
+    if (loading) {
+        return (
+            <div className="auth-container">
+                <div className="auth-form">
+                    <div style={{ textAlign: 'center', padding: '2rem' }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏆</div>
+                        <h2 style={{ color: 'var(--navy-blue)', marginBottom: '1rem' }}>
+                            Loading Warriors...
+                        </h2>
+                        <p style={{ color: 'var(--charcoal-gray)' }}>
+                            Preparing your fitness journey!
+                        </p>
+                    </div>
                 </div>
             </div>
         );
