@@ -8,15 +8,24 @@ const ProgressTracker = ({ user, onBack }) => {
     const [weeklyStats, setWeeklyStats] = useState({});
     const [monthlyStats, setMonthlyStats] = useState({});
 
-    const loadProgressData = useCallback(() => {
-        const userWorkouts = storage.getWorkouts(user.id);
-        const userPullupProgress = storage.getPullupProgress(user.id);
-        
-        setWorkouts(userWorkouts);
-        setPullupProgress(userPullupProgress);
-        
-        calculateWeeklyStats(userWorkouts);
-        calculateMonthlyStats(userWorkouts, userPullupProgress);
+    const loadProgressData = useCallback(async () => {
+        try {
+            const userWorkouts = await storage.getWorkouts(user.id);
+            const userPullupProgress = await storage.getPullupProgress(user.id);
+            
+            setWorkouts(userWorkouts);
+            setPullupProgress(userPullupProgress);
+            
+            calculateWeeklyStats(userWorkouts);
+            calculateMonthlyStats(userWorkouts, userPullupProgress);
+        } catch (error) {
+            console.error('Error loading progress data:', error);
+            // Set default values on error
+            setWorkouts([]);
+            setPullupProgress([]);
+            setWeeklyStats({});
+            setMonthlyStats({});
+        }
     }, [user.id]);
 
     useEffect(() => {

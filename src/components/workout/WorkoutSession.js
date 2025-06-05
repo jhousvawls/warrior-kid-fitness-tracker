@@ -37,6 +37,7 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
     const [powerUpMessage, setPowerUpMessage] = useState('');
     const [comboCount, setComboCount] = useState(0);
     const [isOnFire, setIsOnFire] = useState(false);
+    const [showContinueChoice, setShowContinueChoice] = useState(false);
 
     const currentExercise = exercises[currentExerciseIndex];
     const isLastExercise = currentExerciseIndex === exercises.length - 1;
@@ -119,8 +120,8 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
             storage.addScreenTime(user.id, 10);
             
             if (isLastRound) {
-                // Workout complete!
-                completeWorkout();
+                // Show choice dialog after completing the last exercise of the last round
+                setShowContinueChoice(true);
             } else {
                 // Start next round
                 setCurrentRound(currentRound + 1);
@@ -138,7 +139,7 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
         }
 
         setPullupReps('');
-    }, [currentExercise, pullupReps, completedExercises, comboCount, isLastExercise, isLastRound, user.id, currentRound, currentExerciseIndex, completeWorkout]);
+    }, [currentExercise, pullupReps, completedExercises, comboCount, isLastExercise, isLastRound, user.id, currentRound, currentExerciseIndex]);
 
     useEffect(() => {
         let interval;
@@ -173,11 +174,183 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
         setIsTimerRunning(false);
     };
 
+    const handleContinueToNextCycle = () => {
+        // Reset for next cycle
+        setShowContinueChoice(false);
+        setCurrentRound(1);
+        setCurrentExerciseIndex(0);
+        setCompletedExercises([]);
+        setComboCount(0);
+        setCelebrationMessage('');
+        setPowerUpMessage('');
+        setIsOnFire(false);
+        
+        // Start next cycle with a rest period
+        setIsResting(true);
+        setTimer(30); // 30 second rest before starting new cycle
+        setIsTimerRunning(true);
+    };
+
+    const handleGoToDashboard = () => {
+        // Complete the workout and go to dashboard
+        completeWorkout();
+    };
+
     const formatTime = (seconds) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
+
+    // Show continue choice dialog after completing all exercises
+    if (showContinueChoice) {
+        return (
+            <div className="workout-session">
+                <div className="exercise-card" style={{
+                    background: 'linear-gradient(135deg, #f8fafc, #e2e8f0)',
+                    border: '2px solid var(--navy-blue)',
+                    textAlign: 'center',
+                    maxWidth: '600px',
+                    margin: '2rem auto'
+                }}>
+                    {/* Celebration Header */}
+                    <div style={{
+                        background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                        color: 'white',
+                        padding: '2rem',
+                        margin: '-2rem -2rem 2rem -2rem',
+                        borderRadius: '12px 12px 0 0',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎉</div>
+                        <h2 style={{ 
+                            margin: 0, 
+                            fontSize: '2rem',
+                            fontWeight: 'bold'
+                        }}>WORKOUT COMPLETE!</h2>
+                        <p style={{ 
+                            margin: '0.5rem 0 0 0', 
+                            fontSize: '1.2rem',
+                            opacity: 0.9
+                        }}>
+                            Amazing job, warrior! You crushed all {totalRounds} rounds!
+                        </p>
+                    </div>
+
+                    {/* Screen Time Earned Display */}
+                    <div style={{
+                        background: 'var(--accent-gradient)',
+                        color: 'white',
+                        padding: '1.5rem',
+                        borderRadius: '15px',
+                        margin: '1.5rem 0',
+                        textAlign: 'center',
+                        fontWeight: 'bold',
+                        fontSize: '1.2rem',
+                        boxShadow: '0 6px 20px rgba(217, 119, 6, 0.3)'
+                    }}>
+                        🎮 +{totalRounds * 10} minutes screen time earned! 🎮
+                    </div>
+
+                    {/* Choice Message */}
+                    <div style={{
+                        background: 'rgba(255,255,255,0.8)',
+                        borderRadius: '12px',
+                        padding: '2rem',
+                        margin: '2rem 0',
+                        border: '1px solid rgba(30, 58, 138, 0.2)'
+                    }}>
+                        <h3 style={{ 
+                            color: 'var(--navy-blue)', 
+                            fontSize: '1.5rem',
+                            fontWeight: 'bold',
+                            margin: '0 0 1rem 0'
+                        }}>
+                            What would you like to do next?
+                        </h3>
+                        <p style={{ 
+                            color: 'var(--charcoal-gray)', 
+                            fontSize: '1.1rem',
+                            margin: 0,
+                            lineHeight: '1.5'
+                        }}>
+                            You can continue training with another cycle to earn more screen time, or head back to the dashboard to see your progress!
+                        </p>
+                    </div>
+
+                    {/* Choice Buttons */}
+                    <div style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        gap: '1rem', 
+                        marginTop: '2rem'
+                    }}>
+                        <button 
+                            className="btn btn-primary"
+                            onClick={handleContinueToNextCycle}
+                            style={{
+                                fontSize: '1.2rem',
+                                padding: '1.2rem 2rem',
+                                borderRadius: '12px',
+                                background: 'linear-gradient(135deg, #1e40af, #1e3a8a)',
+                                border: 'none',
+                                boxShadow: '0 6px 20px rgba(30, 64, 175, 0.3)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.5rem'
+                            }}
+                        >
+                            🔄 Continue to Next Cycle
+                            <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                                (+{totalRounds * 10} more screen time!)
+                            </span>
+                        </button>
+                        
+                        <button 
+                            className="btn btn-success"
+                            onClick={handleGoToDashboard}
+                            style={{
+                                fontSize: '1.2rem',
+                                padding: '1.2rem 2rem',
+                                borderRadius: '12px',
+                                background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                                border: 'none',
+                                boxShadow: '0 6px 20px rgba(22, 163, 74, 0.3)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.5rem'
+                            }}
+                        >
+                            🏠 Back to Dashboard
+                            <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                                (View progress & use screen time)
+                            </span>
+                        </button>
+                    </div>
+
+                    {/* Motivational Footer */}
+                    <div style={{
+                        marginTop: '2rem',
+                        padding: '1rem',
+                        background: 'rgba(16, 185, 129, 0.1)',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(16, 185, 129, 0.2)'
+                    }}>
+                        <p style={{ 
+                            color: 'var(--forest-green)',
+                            fontWeight: 'bold',
+                            margin: 0,
+                            fontSize: '1rem'
+                        }}>
+                            💪 You're building strength, discipline, and character! Keep up the warrior spirit!
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     if (isResting) {
         return (

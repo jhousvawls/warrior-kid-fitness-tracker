@@ -9,43 +9,52 @@ const Leaderboard = ({ user, onBack }) => {
     const [activeTab, setActiveTab] = useState('weekly');
     const [debugInfo, setDebugInfo] = useState(null);
 
-    const loadLeaderboards = useCallback(() => {
-        const users = storage.getUsers();
-        const allWorkouts = [];
-        
-        // Get all workouts for all users
-        users.forEach(u => {
-            const userWorkouts = storage.getWorkouts(u.id);
-            userWorkouts.forEach(workout => {
-                allWorkouts.push({
-                    ...workout,
-                    userName: u.name,
-                    userAge: u.age
+    const loadLeaderboards = useCallback(async () => {
+        try {
+            const users = await storage.getUsers();
+            const allWorkouts = [];
+            
+            // Get all workouts for all users
+            for (const u of users) {
+                const userWorkouts = await storage.getWorkouts(u.id);
+                userWorkouts.forEach(workout => {
+                    allWorkouts.push({
+                        ...workout,
+                        userName: u.name,
+                        userAge: u.age
+                    });
                 });
+            }
+
+            // Set debug info
+            setDebugInfo({
+                totalUsers: users.length,
+                totalWorkouts: allWorkouts.length,
+                currentWeek: `${dateHelpers.getWeekStart()} to ${dateHelpers.getWeekEnd()}`,
+                todayDate: dateHelpers.getTodayString(),
+                userWorkouts: allWorkouts.filter(w => w.userId === user.id).length,
+                recentWorkouts: allWorkouts.slice(-5).map(w => ({ date: w.date, user: w.userName }))
             });
-        });
 
-        // Set debug info
-        setDebugInfo({
-            totalUsers: users.length,
-            totalWorkouts: allWorkouts.length,
-            currentWeek: `${dateHelpers.getWeekStart()} to ${dateHelpers.getWeekEnd()}`,
-            todayDate: dateHelpers.getTodayString(),
-            userWorkouts: allWorkouts.filter(w => w.userId === user.id).length,
-            recentWorkouts: allWorkouts.slice(-5).map(w => ({ date: w.date, user: w.userName }))
-        });
+            // Calculate weekly leaderboard
+            const weeklyData = await calculateWeeklyLeaderboard(users, allWorkouts);
+            setWeeklyLeaderboard(weeklyData);
 
-        // Calculate weekly leaderboard
-        const weeklyData = calculateWeeklyLeaderboard(users, allWorkouts);
-        setWeeklyLeaderboard(weeklyData);
+            // Calculate monthly leaderboard (pull-up progress)
+            const monthlyData = await calculateMonthlyLeaderboard(users);
+            setMonthlyLeaderboard(monthlyData);
 
-        // Calculate monthly leaderboard (pull-up progress)
-        const monthlyData = calculateMonthlyLeaderboard(users);
-        setMonthlyLeaderboard(monthlyData);
-
-        // Calculate recent activity (last 30 days)
-        const recentData = calculateRecentActivity(users, allWorkouts);
-        setRecentActivity(recentData);
+            // Calculate recent activity (last 30 days)
+            const recentData = calculateRecentActivity(users, allWorkouts);
+            setRecentActivity(recentData);
+        } catch (error) {
+            console.error('Error loading leaderboards:', error);
+            // Set default values on error
+            setWeeklyLeaderboard([]);
+            setMonthlyLeaderboard([]);
+            setRecentActivity([]);
+            setDebugInfo(null);
+        }
     }, [user.id]);
 
     useEffect(() => {
@@ -83,9 +92,9 @@ const Leaderboard = ({ user, onBack }) => {
             });
     };
 
-    const calculateMonthlyLeaderboard = (users) => {
-        const monthlyStats = users.map(u => {
-            const pullupProgress = storage.getPullupProgress(u.id);
+    const calculateMonthlyLeaderboard = async (users) => {
+        const monthlyStats = await Promise.all(users.map(async (u) => {
+            const pullupProgress = await storage.getPullupProgress(u.id);
             const thisMonthProgress = pullupProgress.filter(p => 
                 dateHelpers.isThisMonth(p.date)
             );
@@ -111,7 +120,7 @@ const Leaderboard = ({ user, onBack }) => {
                 improvement: Math.round(improvement * 10) / 10,
                 score: totalPullups // Primary sort by total pull-ups
             };
-        });
+        }));
 
         return monthlyStats
             .filter(stat => stat.totalPullups > 0)

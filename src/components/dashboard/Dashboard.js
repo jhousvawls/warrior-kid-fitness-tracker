@@ -10,20 +10,28 @@ const Dashboard = ({ user, onStartWorkout, onViewCompetition, onViewProgress }) 
     const [todayWorkouts, setTodayWorkouts] = useState(0);
     const [superheroType, setSuperheroType] = useState('strength');
 
-    const loadUserData = useCallback(() => {
-        const userScreenTime = storage.getScreenTime(user.id);
-        const userWorkouts = storage.getWorkouts(user.id);
-        const today = dateHelpers.getTodayString();
-        
-        setScreenTime(userScreenTime);
-        
-        // Calculate weekly progress (5/7 days goal)
-        const daysThisWeek = dateHelpers.getWorkoutDaysThisWeek(userWorkouts);
-        setWeeklyProgress(daysThisWeek);
-        
-        // Count today's completed cycles
-        const todayCycles = userWorkouts.filter(w => w.date === today).length;
-        setTodayWorkouts(todayCycles);
+    const loadUserData = useCallback(async () => {
+        try {
+            const userScreenTime = await storage.getScreenTime(user.id);
+            const userWorkouts = await storage.getWorkouts(user.id);
+            const today = dateHelpers.getTodayString();
+            
+            setScreenTime(userScreenTime);
+            
+            // Calculate weekly progress (5/7 days goal)
+            const daysThisWeek = dateHelpers.getWorkoutDaysThisWeek(userWorkouts);
+            setWeeklyProgress(daysThisWeek);
+            
+            // Count today's completed cycles
+            const todayCycles = userWorkouts.filter(w => w.date === today).length;
+            setTodayWorkouts(todayCycles);
+        } catch (error) {
+            console.error('Error loading user data:', error);
+            // Set default values on error
+            setScreenTime(0);
+            setWeeklyProgress(0);
+            setTodayWorkouts(0);
+        }
     }, [user.id]);
 
     useEffect(() => {

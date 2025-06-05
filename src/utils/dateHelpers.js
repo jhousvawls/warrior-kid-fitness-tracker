@@ -52,6 +52,12 @@ export const dateHelpers = {
     
     // Get days worked out this week
     getWorkoutDaysThisWeek: (workouts) => {
+        // Safety check: ensure workouts is an array
+        if (!Array.isArray(workouts)) {
+            console.warn('getWorkoutDaysThisWeek received non-array:', workouts);
+            return 0;
+        }
+        
         const thisWeekDates = dateHelpers.getWeekDates();
         const workoutDates = workouts.map(w => w.date);
         

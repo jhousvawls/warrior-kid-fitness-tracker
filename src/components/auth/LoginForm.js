@@ -6,7 +6,8 @@ const LoginForm = ({ onLogin }) => {
     const [showMathChallenge, setShowMathChallenge] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
-        age: ''
+        age: '',
+        password: ''
     });
     const [isLogin, setIsLogin] = useState(true);
     const [users, setUsers] = useState([]);
@@ -37,7 +38,8 @@ const LoginForm = ({ onLogin }) => {
     };
 
     const handleExistingUserLogin = (user) => {
-        setFormData({ name: user.name, age: user.age });
+        setFormData({ name: user.name, age: user.age.toString(), password: '' });
+        // For existing users, go directly to math challenge
         setShowMathChallenge(true);
     };
 
@@ -62,6 +64,8 @@ const LoginForm = ({ onLogin }) => {
                     createdAt: new Date().toISOString()
                 };
                 await storage.saveUser(user);
+                // Update local users state to include the new user
+                setUsers(prevUsers => [...prevUsers, user]);
             }
             
             storage.setCurrentUser(user.id);
@@ -224,6 +228,7 @@ const LoginForm = ({ onLogin }) => {
                                 required
                             />
                         </div>
+
                         
                         <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
                             Start Warrior Training!
