@@ -6,7 +6,6 @@ const AdminPanel = ({ onBack }) => {
     const [users, setUsers] = useState([]);
     const [showConfirmDelete, setShowConfirmDelete] = useState(null);
     const [showUserDetails, setShowUserDetails] = useState(null);
-    const [loading, setLoading] = useState(true);
     const [migrating, setMigrating] = useState(false);
     const [migrationStatus, setMigrationStatus] = useState('');
 
@@ -16,7 +15,6 @@ const AdminPanel = ({ onBack }) => {
 
     const loadUsers = async () => {
         try {
-            setLoading(true);
             const allUsers = await storage.getUsers();
             const usersWithStats = await Promise.all(allUsers.map(async (user) => {
                 const workouts = await storage.getWorkouts(user.id);
@@ -37,8 +35,6 @@ const AdminPanel = ({ onBack }) => {
         } catch (error) {
             console.error('Error loading users:', error);
             setUsers([]);
-        } finally {
-            setLoading(false);
         }
     };
 
