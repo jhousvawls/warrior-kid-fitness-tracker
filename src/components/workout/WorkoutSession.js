@@ -33,10 +33,8 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
     const [pullupReps, setPullupReps] = useState('');
     const [currentRound, setCurrentRound] = useState(1);
     const [totalRounds] = useState(3); // Default to 3 rounds
-    const [cardCelebrating, setCardCelebrating] = useState(false);
     const [celebrationMessage, setCelebrationMessage] = useState('');
     const [powerUpMessage, setPowerUpMessage] = useState('');
-    const [showCardPowerUp, setShowCardPowerUp] = useState(false);
     const [comboCount, setComboCount] = useState(0);
     const [isOnFire, setIsOnFire] = useState(false);
 
@@ -87,7 +85,6 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
         // Trigger inline celebration animation
         const randomCelebration = COMPLETION_CELEBRATIONS[Math.floor(Math.random() * COMPLETION_CELEBRATIONS.length)];
         setCelebrationMessage(randomCelebration);
-        setCardCelebrating(true);
         
         // Update combo count and check for power-ups
         const newComboCount = comboCount + 1;
@@ -97,12 +94,10 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
         if (newComboCount >= 3) {
             const randomPowerUp = POWER_UP_MESSAGES[Math.floor(Math.random() * POWER_UP_MESSAGES.length)];
             setPowerUpMessage(randomPowerUp);
-            setShowCardPowerUp(true);
             setIsOnFire(true);
             
             // Reset power-up after 3 seconds
             setTimeout(() => {
-                setShowCardPowerUp(false);
                 setIsOnFire(false);
                 setPowerUpMessage('');
             }, 3000);
@@ -110,7 +105,6 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
         
         // Reset celebration after 2 seconds
         setTimeout(() => {
-            setCardCelebrating(false);
             setCelebrationMessage('');
         }, 2000);
 
