@@ -66,11 +66,16 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
                 await storage.savePullupProgress(user.id, totalPullups, dateHelpers.getTodayString());
             }
 
-            onComplete();
+            // Small delay to ensure data is saved before navigating back
+            setTimeout(() => {
+                onComplete();
+            }, 100);
         } catch (error) {
             console.error('Error saving workout:', error);
             // Still complete the workout even if saving fails
-            onComplete();
+            setTimeout(() => {
+                onComplete();
+            }, 100);
         }
     }, [user.id, completedExercises, totalRounds, onComplete]);
 

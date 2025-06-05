@@ -22,6 +22,7 @@ const FitnessApp = () => {
     const [currentView, setCurrentView] = useState('dashboard');
     const [screenTime, setScreenTime] = useState(0);
     const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+    const [dashboardKey, setDashboardKey] = useState(Date.now());
 
     useEffect(() => {
         // Check for existing logged-in user
@@ -66,6 +67,8 @@ const FitnessApp = () => {
     const handleWorkoutComplete = () => {
         setCurrentView('dashboard');
         updateScreenTime(currentUser.id);
+        // Force dashboard to refresh by updating the key
+        setDashboardKey(Date.now());
     };
 
     const handleViewChange = (view) => {
@@ -107,6 +110,7 @@ const FitnessApp = () => {
             <main>
                 {currentView === 'dashboard' && (
                     <Dashboard
+                        key={dashboardKey}
                         user={currentUser}
                         onStartWorkout={() => handleViewChange('workout')}
                         onViewCompetition={() => handleViewChange('competition')}
