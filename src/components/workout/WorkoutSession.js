@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { storage } from '../../utils/localStorage';
 import { dateHelpers } from '../../utils/dateHelpers';
-import exercises from '../../data/exercises';
+import exerciseService from '../../data/exerciseService';
 
 // Power-up messages for motivation
 const POWER_UP_MESSAGES = [
@@ -38,10 +38,33 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
     const [comboCount, setComboCount] = useState(0);
     const [isOnFire, setIsOnFire] = useState(false);
     const [showContinueChoice, setShowContinueChoice] = useState(false);
+    const [exercises, setExercises] = useState([]);
+    const [isLoadingExercises, setIsLoadingExercises] = useState(true);
 
     const currentExercise = exercises[currentExerciseIndex];
     const isLastExercise = currentExerciseIndex === exercises.length - 1;
     const isLastRound = currentRound === totalRounds;
+
+    // Load exercises on component mount
+    useEffect(() => {
+        const loadExercises = async () => {
+            try {
+                setIsLoadingExercises(true);
+                const loadedExercises = await exerciseService.getExercises();
+                setExercises(loadedExercises);
+                console.log('💪 Loaded exercises for workout:', loadedExercises.length);
+            } catch (error) {
+                console.error('Error loading exercises:', error);
+                // Fallback will be handled by exerciseService
+                const fallbackExercises = await exerciseService.getExercises();
+                setExercises(fallbackExercises);
+            } finally {
+                setIsLoadingExercises(false);
+            }
+        };
+
+        loadExercises();
+    }, []);
 
     const completeWorkout = useCallback(async () => {
         const workout = {
@@ -490,6 +513,113 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
                                 ⏭️ Skip Rest
                             </button>
                         )}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Show loading state while exercises are loading
+    if (isLoadingExercises || exercises.length === 0) {
+        return (
+            <div className="workout-session">
+                <div className="exercise-card" style={{
+                    background: 'linear-gradient(135deg, #f8fafc, #e2e8f0)',
+                    border: '2px solid var(--navy-blue)',
+                    textAlign: 'center',
+                    maxWidth: '500px',
+                    margin: '2rem auto'
+                }}>
+                    <div style={{
+                        padding: '3rem 2rem',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{
+                            fontSize: '3rem',
+                            marginBottom: '1rem',
+                            animation: 'pulse 2s infinite'
+                        }}>
+                            🏋️‍♂️
+                        </div>
+                        <h2 style={{ 
+                            color: 'var(--navy-blue)',
+                            marginBottom: '1rem'
+                        }}>
+                            {isLoadingExercises ? 'Loading Workout...' : 'Preparing Exercises...'}
+                        </h2>
+                        <p style={{ 
+                            color: 'var(--charcoal-gray)',
+                            fontSize: '1.1rem'
+                        }}>
+                            {isLoadingExercises 
+                                ? 'Getting your exercises ready from WordPress...' 
+                                : 'Setting up your workout session...'
+                            }
+                        </p>
+                        
+                        {/* Loading animation */}
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            marginTop: '2rem'
+                        }}>
+                            {[1, 2, 3].map(i => (
+                                <div
+                                    key={i}
+                                    style={{
+                                        width: '12px',
+                                        height: '12px',
+                                        borderRadius: '50%',
+                                        backgroundColor: 'var(--navy-blue)',
+                                        animation: `bounce 1.4s ease-in-out ${i * 0.16}s infinite both`
+                                    }}
+                                />
+                            ))}
+                        </div>
+                        
+                        <button 
+                            className="btn btn-secondary"
+                            onClick={onCancel}
+                            style={{ marginTop: '2rem' }}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Safety check - if no current exercise, show error
+    if (!currentExercise) {
+        return (
+            <div className="workout-session">
+                <div className="exercise-card" style={{
+                    background: 'linear-gradient(135deg, #f8fafc, #e2e8f0)',
+                    border: '2px solid var(--red-500)',
+                    textAlign: 'center',
+                    maxWidth: '500px',
+                    margin: '2rem auto'
+                }}>
+                    <div style={{
+                        padding: '3rem 2rem',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
+                        <h2 style={{ color: 'var(--red-500)', marginBottom: '1rem' }}>
+                            Exercise Loading Error
+                        </h2>
+                        <p style={{ color: 'var(--charcoal-gray)', fontSize: '1.1rem' }}>
+                            Unable to load workout exercises. Please try again.
+                        </p>
+                        <button 
+                            className="btn btn-primary"
+                            onClick={onCancel}
+                            style={{ marginTop: '2rem' }}
+                        >
+                            Back to Dashboard
+                        </button>
                     </div>
                 </div>
             </div>

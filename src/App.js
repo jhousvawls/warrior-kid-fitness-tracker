@@ -14,6 +14,7 @@ import ContactPage from './pages/ContactPage';
 import BlogPage from './pages/BlogPage';
 import BlogPost from './pages/BlogPost';
 import { storage } from './utils/localStorage';
+import exerciseService from './data/exerciseService';
 import './App.css';
 
 // Component to handle the fitness app routes (requires authentication)
@@ -324,6 +325,22 @@ const PublicLayout = ({ children }) => {
 
 // Main App component with routing
 const App = () => {
+    // Initialize exercise service when app starts
+    useEffect(() => {
+        const initializeExerciseService = async () => {
+            try {
+                console.log('🏋️ Initializing Exercise Service...');
+                await exerciseService.initialize();
+                console.log('✅ Exercise Service initialized successfully');
+            } catch (error) {
+                console.error('❌ Error initializing Exercise Service:', error);
+                // Service will fallback to local exercises automatically
+            }
+        };
+
+        initializeExerciseService();
+    }, []);
+
     return (
         <Router>
             <div className="app">

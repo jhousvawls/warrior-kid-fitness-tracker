@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { storage } from '../../utils/localStorage';
 import { dateHelpers } from '../../utils/dateHelpers';
+import ExerciseManager from './ExerciseManager';
 
 const AdminPanel = ({ onBack }) => {
+    const [activeTab, setActiveTab] = useState('users');
     const [users, setUsers] = useState([]);
     const [showConfirmDelete, setShowConfirmDelete] = useState(null);
     const [showUserDetails, setShowUserDetails] = useState(null);
@@ -175,232 +177,276 @@ const AdminPanel = ({ onBack }) => {
                 <div className="card-header">
                     <h1 className="card-title">🛠️ Admin Panel</h1>
                     <div style={{ display: 'flex', gap: '1rem' }}>
-                        <button 
-                            className="btn btn-accent"
-                            onClick={exportAllData}
-                        >
-                            📥 Export All Data
-                        </button>
+                        {activeTab === 'users' && (
+                            <button 
+                                className="btn btn-accent"
+                                onClick={exportAllData}
+                            >
+                                📥 Export All Data
+                            </button>
+                        )}
                         <button className="btn btn-secondary" onClick={onBack}>
                             ← Back to App
                         </button>
                     </div>
                 </div>
                 <p style={{ color: 'var(--charcoal-gray)' }}>
-                    Manage users, view statistics, and export data
+                    Manage users, exercises, and view statistics
                 </p>
-            </div>
 
-            {/* Statistics Overview */}
-            <div className="card">
-                <h2 className="card-title">📊 Overview</h2>
-                <div className="dashboard-grid">
-                    <div style={{ textAlign: 'center' }}>
-                        <h3 style={{ color: 'var(--navy-blue)', margin: '0 0 0.5rem 0' }}>
-                            {users.length}
-                        </h3>
-                        <p style={{ color: 'var(--charcoal-gray)', margin: 0 }}>Total Users</p>
-                    </div>
-                    <div style={{ textAlign: 'center' }}>
-                        <h3 style={{ color: 'var(--forest-green)', margin: '0 0 0.5rem 0' }}>
-                            {users.reduce((sum, u) => sum + u.totalWorkouts, 0)}
-                        </h3>
-                        <p style={{ color: 'var(--charcoal-gray)', margin: 0 }}>Total Workouts</p>
-                    </div>
-                    <div style={{ textAlign: 'center' }}>
-                        <h3 style={{ color: 'var(--amber-orange)', margin: '0 0 0.5rem 0' }}>
-                            {formatScreenTime(users.reduce((sum, u) => sum + u.screenTime, 0))}
-                        </h3>
-                        <p style={{ color: 'var(--charcoal-gray)', margin: 0 }}>Total Screen Time</p>
-                    </div>
-                </div>
-            </div>
-
-            {/* WordPress Migration */}
-            <div className="card">
-                <h2 className="card-title">🔄 WordPress Migration</h2>
-                <p style={{ color: 'var(--charcoal-gray)', marginBottom: '1.5rem' }}>
-                    Migrate all localStorage data to WordPress for permanent storage and cross-device access.
-                </p>
-                
-                {migrationStatus && (
-                    <div style={{
-                        background: migrationStatus.includes('✅') ? '#d1fae5' : '#fee2e2',
-                        border: `1px solid ${migrationStatus.includes('✅') ? '#a7f3d0' : '#fca5a5'}`,
-                        borderRadius: '8px',
-                        padding: '1rem',
-                        marginBottom: '1.5rem'
-                    }}>
-                        <p style={{ 
-                            color: migrationStatus.includes('✅') ? '#065f46' : '#dc2626',
-                            fontWeight: 'bold',
-                            margin: 0
-                        }}>
-                            {migrationStatus}
-                        </p>
-                    </div>
-                )}
-
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                {/* Tab Navigation */}
+                <div style={{
+                    display: 'flex',
+                    gap: '0.5rem',
+                    marginTop: '1.5rem',
+                    borderBottom: '2px solid var(--light-gray)',
+                    paddingBottom: '0.5rem'
+                }}>
                     <button
-                        className="btn btn-primary"
-                        onClick={migrateToWordPress}
-                        disabled={migrating}
+                        className={`btn ${activeTab === 'users' ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => setActiveTab('users')}
                         style={{
-                            opacity: migrating ? 0.6 : 1,
-                            cursor: migrating ? 'not-allowed' : 'pointer'
+                            borderRadius: '8px 8px 0 0',
+                            border: 'none',
+                            borderBottom: activeTab === 'users' ? '3px solid var(--navy-blue)' : 'none'
                         }}
                     >
-                        {migrating ? '⏳ Migrating...' : '🚀 Migrate to WordPress'}
+                        👥 User Management
                     </button>
-                    
-                    <div style={{ fontSize: '0.9rem', color: 'var(--charcoal-gray)' }}>
-                        <p style={{ margin: 0 }}>
-                            This will copy all user data, workouts, and progress to your WordPress backend.
-                        </p>
-                    </div>
+                    <button
+                        className={`btn ${activeTab === 'exercises' ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => setActiveTab('exercises')}
+                        style={{
+                            borderRadius: '8px 8px 0 0',
+                            border: 'none',
+                            borderBottom: activeTab === 'exercises' ? '3px solid var(--navy-blue)' : 'none'
+                        }}
+                    >
+                        🏋️ Exercise Manager
+                    </button>
                 </div>
             </div>
 
-            {/* Users List */}
-            <div className="card">
-                <h2 className="card-title">👥 User Management</h2>
-                
-                {users.length === 0 ? (
-                    <div style={{ 
-                        textAlign: 'center', 
-                        padding: '2rem',
-                        color: 'var(--charcoal-gray)'
-                    }}>
-                        <p>No users found.</p>
+            {/* Tab Content */}
+            {activeTab === 'users' && (
+                <>
+                    {/* Statistics Overview */}
+                    <div className="card">
+                        <h2 className="card-title">📊 Overview</h2>
+                        <div className="dashboard-grid">
+                            <div style={{ textAlign: 'center' }}>
+                                <h3 style={{ color: 'var(--navy-blue)', margin: '0 0 0.5rem 0' }}>
+                                    {users.length}
+                                </h3>
+                                <p style={{ color: 'var(--charcoal-gray)', margin: 0 }}>Total Users</p>
+                            </div>
+                            <div style={{ textAlign: 'center' }}>
+                                <h3 style={{ color: 'var(--forest-green)', margin: '0 0 0.5rem 0' }}>
+                                    {users.reduce((sum, u) => sum + u.totalWorkouts, 0)}
+                                </h3>
+                                <p style={{ color: 'var(--charcoal-gray)', margin: 0 }}>Total Workouts</p>
+                            </div>
+                            <div style={{ textAlign: 'center' }}>
+                                <h3 style={{ color: 'var(--amber-orange)', margin: '0 0 0.5rem 0' }}>
+                                    {formatScreenTime(users.reduce((sum, u) => sum + u.screenTime, 0))}
+                                </h3>
+                                <p style={{ color: 'var(--charcoal-gray)', margin: 0 }}>Total Screen Time</p>
+                            </div>
+                        </div>
                     </div>
-                ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {users.map(user => (
-                            <div
-                                key={user.id}
+
+                    {/* WordPress Migration */}
+                    <div className="card">
+                        <h2 className="card-title">🔄 WordPress Migration</h2>
+                        <p style={{ color: 'var(--charcoal-gray)', marginBottom: '1.5rem' }}>
+                            Migrate all localStorage data to WordPress for permanent storage and cross-device access.
+                        </p>
+                        
+                        {migrationStatus && (
+                            <div style={{
+                                background: migrationStatus.includes('✅') ? '#d1fae5' : '#fee2e2',
+                                border: `1px solid ${migrationStatus.includes('✅') ? '#a7f3d0' : '#fca5a5'}`,
+                                borderRadius: '8px',
+                                padding: '1rem',
+                                marginBottom: '1.5rem'
+                            }}>
+                                <p style={{ 
+                                    color: migrationStatus.includes('✅') ? '#065f46' : '#dc2626',
+                                    fontWeight: 'bold',
+                                    margin: 0
+                                }}>
+                                    {migrationStatus}
+                                </p>
+                            </div>
+                        )}
+
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                            <button
+                                className="btn btn-primary"
+                                onClick={migrateToWordPress}
+                                disabled={migrating}
                                 style={{
-                                    background: 'white',
-                                    border: '1px solid var(--light-gray)',
-                                    borderRadius: '8px',
-                                    padding: '1.5rem'
+                                    opacity: migrating ? 0.6 : 1,
+                                    cursor: migrating ? 'not-allowed' : 'pointer'
                                 }}
                             >
-                                <div style={{ 
-                                    display: 'flex', 
-                                    justifyContent: 'space-between', 
-                                    alignItems: 'flex-start',
-                                    marginBottom: '1rem'
-                                }}>
-                                    <div>
-                                        <h3 style={{ 
-                                            color: 'var(--navy-blue)', 
-                                            margin: '0 0 0.5rem 0',
-                                            fontSize: '1.3rem'
-                                        }}>
-                                            {user.name}
-                                        </h3>
+                                {migrating ? '⏳ Migrating...' : '🚀 Migrate to WordPress'}
+                            </button>
+                            
+                            <div style={{ fontSize: '0.9rem', color: 'var(--charcoal-gray)' }}>
+                                <p style={{ margin: 0 }}>
+                                    This will copy all user data, workouts, and progress to your WordPress backend.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Users List */}
+                    <div className="card">
+                        <h2 className="card-title">👥 User Management</h2>
+                        
+                        {users.length === 0 ? (
+                            <div style={{ 
+                                textAlign: 'center', 
+                                padding: '2rem',
+                                color: 'var(--charcoal-gray)'
+                            }}>
+                                <p>No users found.</p>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {users.map(user => (
+                                    <div
+                                        key={user.id}
+                                        style={{
+                                            background: 'white',
+                                            border: '1px solid var(--light-gray)',
+                                            borderRadius: '8px',
+                                            padding: '1.5rem'
+                                        }}
+                                    >
                                         <div style={{ 
                                             display: 'flex', 
-                                            gap: '2rem',
-                                            fontSize: '0.9rem',
-                                            color: 'var(--charcoal-gray)'
+                                            justifyContent: 'space-between', 
+                                            alignItems: 'flex-start',
+                                            marginBottom: '1rem'
                                         }}>
-                                            <span>Age: {user.age}</span>
-                                            <span>Workouts: {user.totalWorkouts}</span>
-                                            <span>Screen Time: {formatScreenTime(user.screenTime)}</span>
-                                            <span>Pull-ups: {user.totalPullups}</span>
-                                            <span>Last Active: {formatDate(user.lastActive)}</span>
+                                            <div>
+                                                <h3 style={{ 
+                                                    color: 'var(--navy-blue)', 
+                                                    margin: '0 0 0.5rem 0',
+                                                    fontSize: '1.3rem'
+                                                }}>
+                                                    {user.name}
+                                                </h3>
+                                                <div style={{ 
+                                                    display: 'flex', 
+                                                    gap: '2rem',
+                                                    fontSize: '0.9rem',
+                                                    color: 'var(--charcoal-gray)'
+                                                }}>
+                                                    <span>Age: {user.age}</span>
+                                                    <span>Workouts: {user.totalWorkouts}</span>
+                                                    <span>Screen Time: {formatScreenTime(user.screenTime)}</span>
+                                                    <span>Pull-ups: {user.totalPullups}</span>
+                                                    <span>Last Active: {formatDate(user.lastActive)}</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                <button
+                                                    className="btn btn-secondary"
+                                                    onClick={() => setShowUserDetails(user)}
+                                                    style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}
+                                                >
+                                                    📊 Details
+                                                </button>
+                                                <button
+                                                    className="btn btn-accent"
+                                                    onClick={() => exportUserData(user)}
+                                                    style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}
+                                                >
+                                                    📥 Export
+                                                </button>
+                                                <button
+                                                    className="btn btn-secondary"
+                                                    onClick={() => resetUserData(user.id)}
+                                                    style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}
+                                                >
+                                                    🔄 Reset Data
+                                                </button>
+                                                <button
+                                                    className="btn"
+                                                    onClick={() => setShowConfirmDelete(user.id)}
+                                                    style={{ 
+                                                        fontSize: '0.8rem', 
+                                                        padding: '0.5rem 1rem',
+                                                        background: 'var(--warning-red)',
+                                                        color: 'white'
+                                                    }}
+                                                >
+                                                    🗑️ Delete
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                    
-                                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                        <button
-                                            className="btn btn-secondary"
-                                            onClick={() => setShowUserDetails(user)}
-                                            style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}
-                                        >
-                                            📊 Details
-                                        </button>
-                                        <button
-                                            className="btn btn-accent"
-                                            onClick={() => exportUserData(user)}
-                                            style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}
-                                        >
-                                            📥 Export
-                                        </button>
-                                        <button
-                                            className="btn btn-secondary"
-                                            onClick={() => resetUserData(user.id)}
-                                            style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}
-                                        >
-                                            🔄 Reset Data
-                                        </button>
-                                        <button
-                                            className="btn"
-                                            onClick={() => setShowConfirmDelete(user.id)}
-                                            style={{ 
-                                                fontSize: '0.8rem', 
-                                                padding: '0.5rem 1rem',
-                                                background: 'var(--warning-red)',
-                                                color: 'white'
-                                            }}
-                                        >
-                                            🗑️ Delete
-                                        </button>
-                                    </div>
-                                </div>
 
-                                {/* Confirm Delete */}
-                                {showConfirmDelete === user.id && (
-                                    <div style={{
-                                        background: '#fee2e2',
-                                        border: '1px solid #fca5a5',
-                                        borderRadius: '8px',
-                                        padding: '1rem',
-                                        marginTop: '1rem'
-                                    }}>
-                                        <p style={{ 
-                                            color: '#dc2626', 
-                                            fontWeight: 'bold',
-                                            margin: '0 0 1rem 0'
-                                        }}>
-                                            ⚠️ Are you sure you want to delete {user.name}?
-                                        </p>
-                                        <p style={{ 
-                                            color: '#7f1d1d', 
-                                            fontSize: '0.9rem',
-                                            margin: '0 0 1rem 0'
-                                        }}>
-                                            This will permanently remove their account and all data (workouts, screen time, progress).
-                                        </p>
-                                        <div style={{ display: 'flex', gap: '1rem' }}>
-                                            <button
-                                                className="btn"
-                                                onClick={() => deleteUser(user.id)}
-                                                style={{ 
-                                                    background: '#dc2626',
-                                                    color: 'white',
-                                                    fontSize: '0.9rem'
-                                                }}
-                                            >
-                                                Yes, Delete User
-                                            </button>
-                                            <button
-                                                className="btn btn-secondary"
-                                                onClick={() => setShowConfirmDelete(null)}
-                                                style={{ fontSize: '0.9rem' }}
-                                            >
-                                                Cancel
-                                            </button>
-                                        </div>
+                                        {/* Confirm Delete */}
+                                        {showConfirmDelete === user.id && (
+                                            <div style={{
+                                                background: '#fee2e2',
+                                                border: '1px solid #fca5a5',
+                                                borderRadius: '8px',
+                                                padding: '1rem',
+                                                marginTop: '1rem'
+                                            }}>
+                                                <p style={{ 
+                                                    color: '#dc2626', 
+                                                    fontWeight: 'bold',
+                                                    margin: '0 0 1rem 0'
+                                                }}>
+                                                    ⚠️ Are you sure you want to delete {user.name}?
+                                                </p>
+                                                <p style={{ 
+                                                    color: '#7f1d1d', 
+                                                    fontSize: '0.9rem',
+                                                    margin: '0 0 1rem 0'
+                                                }}>
+                                                    This will permanently remove their account and all data (workouts, screen time, progress).
+                                                </p>
+                                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                                    <button
+                                                        className="btn"
+                                                        onClick={() => deleteUser(user.id)}
+                                                        style={{ 
+                                                            background: '#dc2626',
+                                                            color: 'white',
+                                                            fontSize: '0.9rem'
+                                                        }}
+                                                    >
+                                                        Yes, Delete User
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-secondary"
+                                                        onClick={() => setShowConfirmDelete(null)}
+                                                        style={{ fontSize: '0.9rem' }}
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
+                                ))}
                             </div>
-                        ))}
+                        )}
                     </div>
-                )}
-            </div>
+                </>
+            )}
+
+            {/* Exercise Manager Tab */}
+            {activeTab === 'exercises' && (
+                <ExerciseManager />
+            )}
 
             {/* User Details Modal */}
             {showUserDetails && (
