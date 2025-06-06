@@ -1,0 +1,49 @@
+[build]
+  publish = "build"
+  command = "npm run build"
+
+[build.environment]
+  REACT_APP_WP_API_URL = "https://fitness4.wpenginepowered.com/wp-json/wp/v2"
+  REACT_APP_SITE_URL = "https://warriorpath.fit"
+
+# Security headers for production
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Cache static assets
+[[headers]]
+  for = "/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Cache service worker
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# SPA routing - redirect all routes to index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Redirect www to non-www for SEO
+[[redirects]]
+  from = "https://www.warriorpath.fit/*"
+  to = "https://warriorpath.fit/:splat"
+  status = 301
+  force = true
+
+# Redirect old domain if needed (uncomment and update if you have an old domain)
+# [[redirects]]
+#   from = "https://old-domain.com/*"
+#   to = "https://warriorpath.fit/:splat"
+#   status = 301
+#   force = true
