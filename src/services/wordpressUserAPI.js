@@ -94,13 +94,15 @@ class WordPressUserAPI {
                 user: user,
                 hasWpId: !!user.wpId,
                 hasWordpressId: !!user.wordpressId,
-                willUseCustomEndpoint: !user.wpId && !user.wordpressId
+                isNewUser: !user.wpId && !user.wordpressId && user.id && user.id.length > 10
             });
 
-            // Always use custom plugin endpoint for new user creation
-            // Check if this is a new user (no wpId and no existing WordPress ID)
-            if (!user.wpId && !user.wordpressId) {
-                console.log('🌐 Creating new user with custom endpoint:', this.endpoints.createUser);
+            // Force new user creation for users with timestamp-based IDs (new users)
+            // New users have long numeric IDs (timestamps), existing users have shorter IDs
+            const isNewUser = !user.wpId && !user.wordpressId && user.id && user.id.length > 10;
+            
+            if (isNewUser) {
+                console.log('🌐 FORCING new user creation with custom endpoint:', this.endpoints.createUser);
                 
                 // Create new user using custom plugin endpoint
                 const userData = {
@@ -108,6 +110,8 @@ class WordPressUserAPI {
                     age: user.age,
                     password: user.password || user.name + '123'
                 };
+
+                console.log('📤 Sending user data to custom endpoint:', userData);
 
                 const response = await fetch(this.endpoints.createUser, {
                     method: 'POST',
