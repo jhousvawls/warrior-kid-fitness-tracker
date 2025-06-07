@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { storage } from '../../utils/localStorage';
 import MathChallenge from './MathChallenge';
+import AvatarUpload from '../user/AvatarUpload';
 
 const LoginForm = ({ onLogin }) => {
     const [showMathChallenge, setShowMathChallenge] = useState(false);
+    const [showAvatarUpload, setShowAvatarUpload] = useState(false);
+    const [newUser, setNewUser] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
         age: '',
@@ -85,6 +88,13 @@ const LoginForm = ({ onLogin }) => {
                 setUsers(prevUsers => [...prevUsers, user]);
                 
                 console.log('✅ New warrior created:', user.name);
+                
+                // Show avatar upload for new users
+                setNewUser(user);
+                setShowMathChallenge(false);
+                setShowAvatarUpload(true);
+                setSaving(false);
+                return; // Don't proceed to login yet
             } else if (user && isLogin) {
                 // Logging in existing user
                 console.log('✅ Existing warrior logged in:', user.name);
@@ -106,6 +116,35 @@ const LoginForm = ({ onLogin }) => {
         setShowMathChallenge(false);
         setFormData({ name: '', age: '' });
     };
+
+    const handleAvatarUpdate = (avatarUrls) => {
+        console.log('Avatar uploaded successfully:', avatarUrls);
+        // Continue to login after avatar upload
+        if (newUser) {
+            storage.setCurrentUser(newUser.id);
+            onLogin(newUser);
+        }
+    };
+
+    const handleAvatarSkip = () => {
+        console.log('Avatar upload skipped');
+        // Continue to login without avatar
+        if (newUser) {
+            storage.setCurrentUser(newUser.id);
+            onLogin(newUser);
+        }
+    };
+
+    // Show avatar upload for new users
+    if (showAvatarUpload && newUser) {
+        return (
+            <AvatarUpload
+                userId={newUser.id}
+                onAvatarUpdate={handleAvatarUpdate}
+                onCancel={handleAvatarSkip}
+            />
+        );
+    }
 
     if (showMathChallenge) {
         return (

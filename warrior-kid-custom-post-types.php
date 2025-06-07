@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Warrior Kid Custom Post Types
  * Description: Custom post types and API endpoints for the Warrior Kid Fitness Tracker React app
- * Version: 2.0.0
+ * Version: 2.1.0
  * Author: Warrior Kid Fitness
  */
 
@@ -206,6 +206,25 @@ class WarriorKidCustomPostTypes {
         register_rest_route('warrior-kid/v1', '/user/login', array(
             'methods' => 'POST',
             'callback' => array($this, 'login_user'),
+            'permission_callback' => '__return_true'
+        ));
+        
+        // Avatar upload endpoints
+        register_rest_route('warrior-kid/v1', '/user/(?P<id>\d+)/avatar/upload', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'upload_user_avatar'),
+            'permission_callback' => '__return_true'
+        ));
+        
+        register_rest_route('warrior-kid/v1', '/user/(?P<id>\d+)/avatar', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_user_avatar'),
+            'permission_callback' => '__return_true'
+        ));
+        
+        register_rest_route('warrior-kid/v1', '/user/(?P<id>\d+)/avatar', array(
+            'methods' => 'DELETE',
+            'callback' => array($this, 'delete_user_avatar'),
             'permission_callback' => '__return_true'
         ));
     }
@@ -514,6 +533,162 @@ class WarriorKidCustomPostTypes {
         );
         
         return rest_ensure_response($user_data);
+    }
+    
+    /**
+     * Upload user avatar
+     */
+    public function upload_user_avatar($request) {
+        $user_id = $request['id'];
+        
+        // Verify user exists
+        $user_post = get_post($user_id);
+        if (!$user_post || $user_post->post_type !== 'warrior_users') {
+            return new WP_Error('user_not_found', 'User not found', array('status' => 404));
+        }
+        
+        // Check if file was uploaded
+        if (empty($_FILES['avatar'])) {
+            return new WP_Error('no_file', 'No file uploaded', array('status' => 400));
+        }
+        
+        $file = $_FILES['avatar'];
+        
+        // Validate file type
+        $allowed_types = array('image/jpeg', 'image/jpg', 'image/png', 'image/webp');
+        if (!in_array($file['type'], $allowed_types)) {
+            return new WP_Error('invalid_file_type', 'Only JPG, PNG, and WebP files are allowed', array('status' => 400));
+        }
+        
+        // Validate file size (2MB max)
+        if ($file['size'] > 2 * 1024 * 1024) {
+            return new WP_Error('file_too_large', 'File size must be less than 2MB', array('status' => 400));
+        }
+        
+        // Include WordPress file handling functions
+        require_once(ABSPATH . 'wp-admin/includes/file.php');
+        require_once(ABSPATH . 'wp-admin/includes/media.php');
+        require_once(ABSPATH . 'wp-admin/includes/image.php');
+        
+        // Handle the upload
+        $upload = wp_handle_upload($file, array('test_form' => false));
+        
+        if (isset($upload['error'])) {
+            return new WP_Error('upload_error', $upload['error'], array('status' => 500));
+        }
+        
+        // Create attachment
+        $attachment = array(
+            'post_mime_type' => $upload['type'],
+            'post_title' => sanitize_file_name($file['name']),
+            'post_content' => '',
+            'post_status' => 'inherit'
+        );
+        
+        $attachment_id = wp_insert_attachment($attachment, $upload['file']);
+        
+        if (is_wp_error($attachment_id)) {
+            return $attachment_id;
+        }
+        
+        // Generate thumbnails
+        $attachment_data = wp_generate_attachment_metadata($attachment_id, $upload['file']);
+        wp_update_attachment_metadata($attachment_id, $attachment_data);
+        
+        // Delete old avatar if exists
+        $old_avatar_id = get_field('avatar_attachment_id', $user_id);
+        if ($old_avatar_id) {
+            wp_delete_attachment($old_avatar_id, true);
+        }
+        
+        // Save avatar attachment ID to user
+        update_field('avatar_attachment_id', $attachment_id, $user_id);
+        update_field('avatar_url', wp_get_attachment_url($attachment_id), $user_id);
+        
+        // Get image sizes
+        $avatar_urls = array(
+            'full' => wp_get_attachment_url($attachment_id),
+            'large' => wp_get_attachment_image_url($attachment_id, 'large'),
+            'medium' => wp_get_attachment_image_url($attachment_id, 'medium'),
+            'thumbnail' => wp_get_attachment_image_url($attachment_id, 'thumbnail')
+        );
+        
+        return rest_ensure_response(array(
+            'attachment_id' => $attachment_id,
+            'urls' => $avatar_urls,
+            'status' => 'success'
+        ));
+    }
+    
+    /**
+     * Get user avatar
+     */
+    public function get_user_avatar($request) {
+        $user_id = $request['id'];
+        
+        // Verify user exists
+        $user_post = get_post($user_id);
+        if (!$user_post || $user_post->post_type !== 'warrior_users') {
+            return new WP_Error('user_not_found', 'User not found', array('status' => 404));
+        }
+        
+        $avatar_id = get_field('avatar_attachment_id', $user_id);
+        
+        if (!$avatar_id) {
+            return rest_ensure_response(array(
+                'has_avatar' => false,
+                'urls' => null
+            ));
+        }
+        
+        // Get image sizes
+        $avatar_urls = array(
+            'full' => wp_get_attachment_url($avatar_id),
+            'large' => wp_get_attachment_image_url($avatar_id, 'large'),
+            'medium' => wp_get_attachment_image_url($avatar_id, 'medium'),
+            'thumbnail' => wp_get_attachment_image_url($avatar_id, 'thumbnail')
+        );
+        
+        return rest_ensure_response(array(
+            'has_avatar' => true,
+            'attachment_id' => $avatar_id,
+            'urls' => $avatar_urls
+        ));
+    }
+    
+    /**
+     * Delete user avatar
+     */
+    public function delete_user_avatar($request) {
+        $user_id = $request['id'];
+        
+        // Verify user exists
+        $user_post = get_post($user_id);
+        if (!$user_post || $user_post->post_type !== 'warrior_users') {
+            return new WP_Error('user_not_found', 'User not found', array('status' => 404));
+        }
+        
+        $avatar_id = get_field('avatar_attachment_id', $user_id);
+        
+        if (!$avatar_id) {
+            return new WP_Error('no_avatar', 'User has no avatar to delete', array('status' => 404));
+        }
+        
+        // Delete attachment
+        $deleted = wp_delete_attachment($avatar_id, true);
+        
+        if (!$deleted) {
+            return new WP_Error('delete_failed', 'Failed to delete avatar', array('status' => 500));
+        }
+        
+        // Remove avatar fields from user
+        delete_field('avatar_attachment_id', $user_id);
+        delete_field('avatar_url', $user_id);
+        
+        return rest_ensure_response(array(
+            'status' => 'success',
+            'message' => 'Avatar deleted successfully'
+        ));
     }
     
     /**
