@@ -191,7 +191,7 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
             }
         }
         return () => clearInterval(interval);
-    }, [timer, isTimerRunning, currentExercise?.type, handleExerciseComplete]);
+    }, [timer, isTimerRunning, currentExercise, handleExerciseComplete]);
 
     const startTimer = () => {
         if (currentExercise && currentExercise.type === 'time') {
