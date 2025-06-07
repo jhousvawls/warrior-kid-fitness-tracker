@@ -1,15 +1,24 @@
 // WordPress API service for user data management
 // This replaces localStorage with WordPress custom post types
 
-const API_BASE = process.env.REACT_APP_WORDPRESS_API_URL || 'https://fitness4.wpenginepowered.com/wp-json/wp/v2';
+const API_BASE = process.env.REACT_APP_WORDPRESS_API_URL || 'https://fitness4.wpenginepowered.com/wp-json';
 
 class WordPressUserAPI {
     constructor() {
         this.endpoints = {
-            users: `${API_BASE}/warrior-users`,
-            workouts: `${API_BASE}/workout-sessions`,
-            screenTime: `${API_BASE}/screen-time-logs`,
-            progress: `${API_BASE}/progress-entries`
+            // Use custom plugin endpoints for better compatibility
+            createUser: `${API_BASE}/warrior-kid/v1/user/create`,
+            loginUser: `${API_BASE}/warrior-kid/v1/user/login`,
+            getUserByName: `${API_BASE}/warrior-kid/v1/user`,
+            saveWorkout: `${API_BASE}/warrior-kid/v1/workout/save`,
+            logScreenTime: `${API_BASE}/warrior-kid/v1/screentime/log`,
+            saveProgress: `${API_BASE}/warrior-kid/v1/progress/save`,
+            getUserStats: `${API_BASE}/warrior-kid/v1/user`,
+            // Fallback to standard REST API
+            users: `${API_BASE}/wp/v2/warrior-users`,
+            workouts: `${API_BASE}/wp/v2/workout-sessions`,
+            screenTime: `${API_BASE}/wp/v2/screen-time-logs`,
+            progress: `${API_BASE}/wp/v2/progress-entries`
         };
     }
 
@@ -54,47 +63,54 @@ class WordPressUserAPI {
 
     async saveUser(user) {
         try {
-            const acfFields = {
-                user_id: user.id,
-                name: user.name,
-                age: user.age,
-                created_at: user.createdAt || new Date().toISOString(),
-                total_screen_time: user.totalScreenTime || 0,
-                last_login: new Date().toISOString()
-            };
-
-            // Include password if provided (for new users)
-            if (user.password) {
-                // Note: In production, passwords should be hashed before storing
-                acfFields.password = user.password;
-            }
-
-            const postData = this.createPostData(`Warrior: ${user.name}`, acfFields);
-
-            let response;
             if (user.wpId) {
-                // Update existing user
-                response = await fetch(`${this.endpoints.users}/${user.wpId}`, {
+                // Update existing user using standard REST API
+                const acfFields = {
+                    user_id: user.id,
+                    name: user.name,
+                    age: user.age,
+                    created_at: user.createdAt || new Date().toISOString(),
+                    total_screen_time: user.totalScreenTime || 0,
+                    last_login: new Date().toISOString()
+                };
+
+                if (user.password) {
+                    acfFields.password = user.password;
+                }
+
+                const postData = this.createPostData(`Warrior: ${user.name}`, acfFields);
+
+                const response = await fetch(`${this.endpoints.users}/${user.wpId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(postData)
                 });
+
+                const result = await this.handleResponse(response);
+                console.log('✅ WordPress user updated successfully:', result);
+                return result;
             } else {
-                // Create new user
-                response = await fetch(this.endpoints.users, {
+                // Create new user using custom plugin endpoint
+                const userData = {
+                    name: user.name,
+                    age: user.age,
+                    password: user.password || user.name + '123'
+                };
+
+                const response = await fetch(this.endpoints.createUser, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(postData)
+                    body: JSON.stringify(userData)
                 });
-            }
 
-            const result = await this.handleResponse(response);
-            console.log('✅ WordPress user saved successfully:', result);
-            return result;
+                const result = await this.handleResponse(response);
+                console.log('✅ WordPress user created successfully:', result);
+                return result;
+            }
         } catch (error) {
             console.error('❌ Error saving user to WordPress:', error);
             throw error;
