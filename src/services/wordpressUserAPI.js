@@ -22,13 +22,39 @@ class WordPressUserAPI {
         };
     }
 
-    // Helper method to handle API responses
+    // Helper method to handle API responses with detailed logging
     async handleResponse(response) {
+        console.log(`🌐 WordPress API Response:`, {
+            status: response.status,
+            statusText: response.statusText,
+            url: response.url,
+            headers: Object.fromEntries(response.headers.entries())
+        });
+
         if (!response.ok) {
-            const error = await response.text();
-            throw new Error(`API Error: ${response.status} - ${error}`);
+            let errorText;
+            try {
+                errorText = await response.text();
+                console.error(`❌ WordPress API Error Details:`, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    url: response.url,
+                    errorBody: errorText
+                });
+            } catch (e) {
+                errorText = 'Unable to read error response';
+                console.error(`❌ WordPress API Error (no body):`, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    url: response.url
+                });
+            }
+            throw new Error(`API Error: ${response.status} - ${errorText}`);
         }
-        return response.json();
+        
+        const data = await response.json();
+        console.log(`✅ WordPress API Success:`, data);
+        return data;
     }
 
     // Helper method to create WordPress post data structure

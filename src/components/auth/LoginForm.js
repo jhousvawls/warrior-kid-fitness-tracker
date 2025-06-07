@@ -83,10 +83,14 @@ const LoginForm = ({ onLogin }) => {
 
                 // Try to save to WordPress first
                 try {
-                    console.log('🌐 Creating warrior in WordPress...');
-                    await wordpressUserAPI.saveUser(user);
-                    console.log('✅ Warrior created in WordPress successfully');
+                    console.log('🌐 Creating warrior in WordPress...', {
+                        userData: user,
+                        endpoint: wordpressUserAPI.endpoints.createUser
+                    });
+                    const wpResult = await wordpressUserAPI.saveUser(user);
+                    console.log('✅ Warrior created in WordPress successfully:', wpResult);
                 } catch (wpError) {
+                    console.error('❌ Error saving user to WordPress:', wpError);
                     console.warn('⚠️ WordPress save failed, falling back to localStorage:', wpError);
                 }
 
