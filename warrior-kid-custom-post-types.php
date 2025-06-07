@@ -17,6 +17,7 @@ class WarriorKidCustomPostTypes {
         add_action('init', array($this, 'register_post_types'));
         add_action('init', array($this, 'add_cors_headers'));
         add_action('rest_api_init', array($this, 'register_custom_endpoints'));
+        add_filter('rest_authentication_errors', array($this, 'allow_anonymous_access'));
         register_activation_hook(__FILE__, array($this, 'flush_rewrite_rules'));
     }
     
@@ -513,6 +514,24 @@ class WarriorKidCustomPostTypes {
         );
         
         return rest_ensure_response($user_data);
+    }
+    
+    /**
+     * Allow anonymous access to our custom endpoints
+     */
+    public function allow_anonymous_access($result) {
+        // If there's already an authentication error, return it
+        if (is_wp_error($result)) {
+            return $result;
+        }
+        
+        // Allow anonymous access to our custom warrior-kid endpoints
+        if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/wp-json/warrior-kid/v1/') !== false) {
+            return true;
+        }
+        
+        // For all other requests, use default authentication
+        return $result;
     }
     
     /**
