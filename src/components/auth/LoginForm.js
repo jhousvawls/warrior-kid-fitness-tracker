@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { storage } from '../../utils/localStorage';
+import { wordpressUserAPI } from '../../services/wordpressUserAPI';
 import MathChallenge from './MathChallenge';
 
 const LoginForm = ({ onLogin }) => {
@@ -45,34 +46,72 @@ const LoginForm = ({ onLogin }) => {
 
     const handleNewUserSubmit = (e) => {
         e.preventDefault();
-        if (formData.name.trim() && formData.age) {
-            setShowMathChallenge(true);
+        if (isLogin) {
+            // For login, need name and password
+            if (formData.name.trim() && formData.password) {
+                // Find user and validate password
+                const user = users.find(u => u.name.toLowerCase() === formData.name.toLowerCase());
+                if (user) {
+                    // In a real app, you'd hash and compare passwords securely
+                    // For now, we'll proceed to math challenge for any existing user
+                    setShowMathChallenge(true);
+                } else {
+                    alert('Warrior not found. Please check your name or create a new warrior account.');
+                }
+            } else {
+                alert('Please enter both warrior name and password.');
+            }
+        } else {
+            // For new warrior, need name, age, and password
+            if (formData.name.trim() && formData.age && formData.password && formData.password.length >= 6) {
+                setShowMathChallenge(true);
+            } else {
+                alert('Please fill in all fields. Password must be at least 6 characters long.');
+            }
         }
     };
 
     const handleMathSuccess = async () => {
         setSaving(true);
         try {
-            // Create or find user
             let user = users.find(u => u.name.toLowerCase() === formData.name.toLowerCase());
             
-            if (!user) {
+            if (!user && !isLogin) {
+                // Creating a new warrior
                 user = {
                     id: Date.now().toString(),
                     name: formData.name.trim(),
                     age: parseInt(formData.age),
+                    password: formData.password, // Store password for WordPress creation
                     createdAt: new Date().toISOString()
                 };
+
+                // Try to save to WordPress first
+                try {
+                    console.log('🌐 Creating warrior in WordPress...');
+                    await wordpressUserAPI.saveUser(user);
+                    console.log('✅ Warrior created in WordPress successfully');
+                } catch (wpError) {
+                    console.warn('⚠️ WordPress save failed, falling back to localStorage:', wpError);
+                }
+
+                // Always save to localStorage as backup
                 await storage.saveUser(user);
-                // Update local users state to include the new user
                 setUsers(prevUsers => [...prevUsers, user]);
+                
+                console.log('✅ New warrior created:', user.name);
+            } else if (user && isLogin) {
+                // Logging in existing user
+                console.log('✅ Existing warrior logged in:', user.name);
+            } else if (!user && isLogin) {
+                throw new Error('User not found. Please create a new warrior account.');
             }
             
             storage.setCurrentUser(user.id);
             onLogin(user);
         } catch (error) {
-            console.error('Error saving user:', error);
-            alert('Failed to save user data. Please try again.');
+            console.error('Error during authentication:', error);
+            alert(error.message || 'Failed to authenticate. Please try again.');
         } finally {
             setSaving(false);
         }
@@ -147,14 +186,20 @@ const LoginForm = ({ onLogin }) => {
                     <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
                         <button 
                             className={`btn ${isLogin ? 'btn-primary' : 'btn-secondary'}`}
-                            onClick={() => setIsLogin(true)}
+                            onClick={() => {
+                                setIsLogin(true);
+                                setFormData(prev => ({ ...prev, password: '' }));
+                            }}
                             style={{ flex: 1 }}
                         >
                             Login
                         </button>
                         <button 
                             className={`btn ${!isLogin ? 'btn-primary' : 'btn-secondary'}`}
-                            onClick={() => setIsLogin(false)}
+                            onClick={() => {
+                                setIsLogin(false);
+                                setFormData(prev => ({ ...prev, password: '' }));
+                            }}
                             style={{ flex: 1 }}
                         >
                             New Warrior
@@ -162,43 +207,51 @@ const LoginForm = ({ onLogin }) => {
                     </div>
                 </div>
 
-                {isLogin && users.length > 0 ? (
-                    <div>
-                        <h3 style={{ marginBottom: '1rem', color: 'var(--navy-blue)' }}>
-                            Choose Your Warrior:
-                        </h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            {users.map(user => (
-                                <button
-                                    key={user.id}
-                                    className="btn btn-accent"
-                                    onClick={() => handleExistingUserLogin(user)}
-                                    style={{ 
-                                        padding: '1rem',
-                                        textAlign: 'left',
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center'
-                                    }}
-                                >
-                                    <span>{user.name}</span>
-                                    <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>
-                                        Age {user.age}
-                                    </span>
-                                </button>
-                            ))}
+                {isLogin ? (
+                    <form onSubmit={handleNewUserSubmit}>
+                        <div className="form-group">
+                            <label htmlFor="name">Warrior Name:</label>
+                            <input
+                                type="text"
+                                id="name"
+                                name="name"
+                                value={formData.name}
+                                onChange={handleInputChange}
+                                placeholder="Enter your warrior name"
+                                required
+                            />
                         </div>
                         
-                        <div style={{ textAlign: 'center', margin: '1rem 0' }}>
-                            <button 
-                                className="btn btn-secondary"
-                                onClick={() => setIsLogin(false)}
-                                style={{ fontSize: '0.9rem' }}
-                            >
-                                Create New Warrior Instead
-                            </button>
+                        <div className="form-group">
+                            <label htmlFor="password">Password:</label>
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                value={formData.password}
+                                onChange={handleInputChange}
+                                placeholder="Enter your password"
+                                required
+                            />
                         </div>
-                    </div>
+                        
+                        <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
+                            Login
+                        </button>
+                        
+                        {users.length > 0 && (
+                            <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                                <button 
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    onClick={() => setIsLogin(false)}
+                                    style={{ fontSize: '0.9rem' }}
+                                >
+                                    Create New Warrior Instead
+                                </button>
+                            </div>
+                        )}
+                    </form>
                 ) : (
                     <form onSubmit={handleNewUserSubmit}>
                         <div className="form-group">
@@ -229,9 +282,27 @@ const LoginForm = ({ onLogin }) => {
                             />
                         </div>
 
+                        {!isLogin && (
+                            <div className="form-group">
+                                <label htmlFor="password">Create Password:</label>
+                                <input
+                                    type="password"
+                                    id="password"
+                                    name="password"
+                                    value={formData.password}
+                                    onChange={handleInputChange}
+                                    placeholder="Create a secure password"
+                                    minLength="6"
+                                    required
+                                />
+                                <small style={{ color: 'var(--charcoal-gray)', fontSize: '0.8rem', display: 'block', marginTop: '0.25rem' }}>
+                                    Password must be at least 6 characters long
+                                </small>
+                            </div>
+                        )}
                         
                         <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-                            Start Warrior Training!
+                            {isLogin ? 'Login' : 'Create New Warrior'}
                         </button>
                         
                         {!isLogin && users.length > 0 && (

@@ -54,14 +54,22 @@ class WordPressUserAPI {
 
     async saveUser(user) {
         try {
-            const postData = this.createPostData(`Warrior: ${user.name}`, {
+            const acfFields = {
                 user_id: user.id,
                 name: user.name,
                 age: user.age,
                 created_at: user.createdAt || new Date().toISOString(),
                 total_screen_time: user.totalScreenTime || 0,
                 last_login: new Date().toISOString()
-            });
+            };
+
+            // Include password if provided (for new users)
+            if (user.password) {
+                // Note: In production, passwords should be hashed before storing
+                acfFields.password = user.password;
+            }
+
+            const postData = this.createPostData(`Warrior: ${user.name}`, acfFields);
 
             let response;
             if (user.wpId) {
@@ -84,9 +92,11 @@ class WordPressUserAPI {
                 });
             }
 
-            return await this.handleResponse(response);
+            const result = await this.handleResponse(response);
+            console.log('✅ WordPress user saved successfully:', result);
+            return result;
         } catch (error) {
-            console.error('Error saving user:', error);
+            console.error('❌ Error saving user to WordPress:', error);
             throw error;
         }
     }
