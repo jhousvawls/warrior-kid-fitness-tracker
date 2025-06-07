@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { storage } from '../../utils/localStorage';
 import { dateHelpers } from '../../utils/dateHelpers';
 import ExerciseManager from './ExerciseManager';
+import EditWarrior from './EditWarrior';
 
 const AdminPanel = ({ onBack }) => {
     const [activeTab, setActiveTab] = useState('users');
     const [users, setUsers] = useState([]);
     const [showConfirmDelete, setShowConfirmDelete] = useState(null);
     const [showUserDetails, setShowUserDetails] = useState(null);
+    const [showEditWarrior, setShowEditWarrior] = useState(null);
     const [migrating, setMigrating] = useState(false);
     const [migrationStatus, setMigrationStatus] = useState('');
 
@@ -168,6 +170,15 @@ const AdminPanel = ({ onBack }) => {
         const hours = Math.floor(minutes / 60);
         const remainingMinutes = minutes % 60;
         return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+    };
+
+    const handleEditWarriorSave = (updatedUser) => {
+        setShowEditWarrior(null);
+        loadUsers(); // Reload users to show updated data
+    };
+
+    const handleEditWarriorCancel = () => {
+        setShowEditWarrior(null);
     };
 
     return (
@@ -355,6 +366,13 @@ const AdminPanel = ({ onBack }) => {
                                             
                                             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                                                 <button
+                                                    className="btn btn-primary"
+                                                    onClick={() => setShowEditWarrior(user)}
+                                                    style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}
+                                                >
+                                                    ✏️ Edit
+                                                </button>
+                                                <button
                                                     className="btn btn-secondary"
                                                     onClick={() => setShowUserDetails(user)}
                                                     style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}
@@ -446,6 +464,15 @@ const AdminPanel = ({ onBack }) => {
             {/* Exercise Manager Tab */}
             {activeTab === 'exercises' && (
                 <ExerciseManager />
+            )}
+
+            {/* Edit Warrior Modal */}
+            {showEditWarrior && (
+                <EditWarrior
+                    user={showEditWarrior}
+                    onSave={handleEditWarriorSave}
+                    onCancel={handleEditWarriorCancel}
+                />
             )}
 
             {/* User Details Modal */}
