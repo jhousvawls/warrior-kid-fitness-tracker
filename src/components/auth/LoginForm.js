@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { storage } from '../../utils/localStorage';
-import { wordpressUserAPI } from '../../services/wordpressUserAPI';
 import MathChallenge from './MathChallenge';
 
 const LoginForm = ({ onLogin }) => {
@@ -81,20 +80,7 @@ const LoginForm = ({ onLogin }) => {
                     createdAt: new Date().toISOString()
                 };
 
-                // Try to save to WordPress first
-                try {
-                    console.log('🌐 Creating warrior in WordPress...', {
-                        userData: user,
-                        endpoint: wordpressUserAPI.endpoints.createUser
-                    });
-                    const wpResult = await wordpressUserAPI.saveUser(user);
-                    console.log('✅ Warrior created in WordPress successfully:', wpResult);
-                } catch (wpError) {
-                    console.error('❌ Error saving user to WordPress:', wpError);
-                    console.warn('⚠️ WordPress save failed, falling back to localStorage:', wpError);
-                }
-
-                // Always save to localStorage as backup
+                // Save user using the storage service (handles both WordPress and localStorage)
                 await storage.saveUser(user);
                 setUsers(prevUsers => [...prevUsers, user]);
                 
