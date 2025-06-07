@@ -89,35 +89,11 @@ class WordPressUserAPI {
 
     async saveUser(user) {
         try {
-            if (user.wpId) {
-                // Update existing user using standard REST API
-                const acfFields = {
-                    user_id: user.id,
-                    name: user.name,
-                    age: user.age,
-                    created_at: user.createdAt || new Date().toISOString(),
-                    total_screen_time: user.totalScreenTime || 0,
-                    last_login: new Date().toISOString()
-                };
-
-                if (user.password) {
-                    acfFields.password = user.password;
-                }
-
-                const postData = this.createPostData(`Warrior: ${user.name}`, acfFields);
-
-                const response = await fetch(`${this.endpoints.users}/${user.wpId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(postData)
-                });
-
-                const result = await this.handleResponse(response);
-                console.log('✅ WordPress user updated successfully:', result);
-                return result;
-            } else {
+            // Always use custom plugin endpoint for new user creation
+            // Check if this is a new user (no wpId and no existing WordPress ID)
+            if (!user.wpId && !user.wordpressId) {
+                console.log('🌐 Creating new user with custom endpoint:', this.endpoints.createUser);
+                
                 // Create new user using custom plugin endpoint
                 const userData = {
                     name: user.name,
@@ -135,6 +111,37 @@ class WordPressUserAPI {
 
                 const result = await this.handleResponse(response);
                 console.log('✅ WordPress user created successfully:', result);
+                return result;
+            } else {
+                // Update existing user using standard REST API
+                console.log('🔄 Updating existing user with standard REST API');
+                
+                const acfFields = {
+                    user_id: user.id,
+                    name: user.name,
+                    age: user.age,
+                    created_at: user.createdAt || new Date().toISOString(),
+                    total_screen_time: user.totalScreenTime || 0,
+                    last_login: new Date().toISOString()
+                };
+
+                if (user.password) {
+                    acfFields.password = user.password;
+                }
+
+                const postData = this.createPostData(`Warrior: ${user.name}`, acfFields);
+                const updateId = user.wpId || user.wordpressId;
+
+                const response = await fetch(`${this.endpoints.users}/${updateId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(postData)
+                });
+
+                const result = await this.handleResponse(response);
+                console.log('✅ WordPress user updated successfully:', result);
                 return result;
             }
         } catch (error) {
