@@ -198,6 +198,13 @@ const Dashboard = ({ user, onStartWorkout, onViewCompetition, onViewProgress }) 
                     </button>
                     <button 
                         className="btn btn-accent"
+                        onClick={() => onStartWorkout('random')}
+                        style={{ padding: '1.5rem', fontSize: '1.1rem' }}
+                    >
+                        🎲 Random Workout
+                    </button>
+                    <button 
+                        className="btn btn-accent"
                         onClick={onViewCompetition}
                         style={{ padding: '1.5rem', fontSize: '1.1rem' }}
                     >

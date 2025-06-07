@@ -72,7 +72,8 @@ const EditWarrior = ({ user, onSave, onCancel }) => {
     };
 
     const deleteAvatar = async () => {
-        if (!confirm(`Remove avatar for ${user.name}?`)) return;
+        const confirmDelete = window.confirm(`Remove avatar for ${user.name}?`);
+        if (!confirmDelete) return;
 
         try {
             const response = await fetch(

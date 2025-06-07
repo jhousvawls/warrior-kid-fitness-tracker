@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'r
 import LoginForm from './components/auth/LoginForm';
 import Dashboard from './components/dashboard/Dashboard';
 import WorkoutSession from './components/workout/WorkoutSession';
+import RandomWorkoutGenerator from './components/workout/RandomWorkoutGenerator';
+import EnhancedMathChallenge from './components/auth/EnhancedMathChallenge';
 import Leaderboard from './components/competition/Leaderboard';
 import ProgressTracker from './components/progress/ProgressTracker';
 import AdminAuth from './components/admin/AdminAuth';
@@ -24,6 +26,9 @@ const FitnessApp = () => {
     const [screenTime, setScreenTime] = useState(0);
     const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
     const [dashboardKey, setDashboardKey] = useState(Date.now());
+    const [showRandomWorkout, setShowRandomWorkout] = useState(false);
+    const [showEnhancedMath, setShowEnhancedMath] = useState(false);
+    const [randomWorkoutData, setRandomWorkoutData] = useState(null);
 
     useEffect(() => {
         // Check for existing logged-in user
@@ -113,7 +118,13 @@ const FitnessApp = () => {
                     <Dashboard
                         key={dashboardKey}
                         user={currentUser}
-                        onStartWorkout={() => handleViewChange('workout')}
+                        onStartWorkout={(type) => {
+                            if (type === 'random') {
+                                setShowRandomWorkout(true);
+                            } else {
+                                handleViewChange('workout');
+                            }
+                        }}
                         onViewCompetition={() => handleViewChange('competition')}
                         onViewProgress={() => handleViewChange('progress')}
                     />
@@ -150,6 +161,41 @@ const FitnessApp = () => {
                 {currentView === 'admin-panel' && isAdminAuthenticated && (
                     <AdminPanel
                         onBack={handleAdminBack}
+                    />
+                )}
+
+                {/* Random Workout Generator Modal */}
+                {showRandomWorkout && (
+                    <RandomWorkoutGenerator
+                        user={currentUser}
+                        onWorkoutGenerated={(workout) => {
+                            setRandomWorkoutData(workout);
+                            setShowRandomWorkout(false);
+                            setShowEnhancedMath(true);
+                        }}
+                        onCancel={() => setShowRandomWorkout(false)}
+                    />
+                )}
+
+                {/* Enhanced Math Challenge Modal */}
+                {showEnhancedMath && (
+                    <EnhancedMathChallenge
+                        userAge={currentUser.age}
+                        onSuccess={() => {
+                            setShowEnhancedMath(false);
+                            if (randomWorkoutData) {
+                                // Start random workout
+                                setCurrentView('workout');
+                                setRandomWorkoutData(null);
+                            } else {
+                                // Start regular workout
+                                setCurrentView('workout');
+                            }
+                        }}
+                        onCancel={() => {
+                            setShowEnhancedMath(false);
+                            setRandomWorkoutData(null);
+                        }}
                     />
                 )}
             </main>
