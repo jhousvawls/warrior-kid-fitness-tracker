@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Warrior Kid Custom Post Types
  * Description: Custom post types and API endpoints for the Warrior Kid Fitness Tracker React app
- * Version: 2.1.0
+ * Version: 2.2.0
  * Author: Warrior Kid Fitness
  */
 
@@ -19,6 +19,12 @@ class WarriorKidCustomPostTypes {
         add_action('rest_api_init', array($this, 'register_custom_endpoints'));
         add_filter('rest_authentication_errors', array($this, 'allow_anonymous_access'));
         register_activation_hook(__FILE__, array($this, 'flush_rewrite_rules'));
+        
+        // Admin functionality
+        add_action('admin_init', array($this, 'add_admin_actions'));
+        add_filter('post_row_actions', array($this, 'add_warrior_row_actions'), 10, 2);
+        add_action('add_meta_boxes', array($this, 'add_warrior_meta_boxes'));
+        add_action('admin_head', array($this, 'add_admin_styles'));
     }
     
     /**
@@ -225,6 +231,13 @@ class WarriorKidCustomPostTypes {
         register_rest_route('warrior-kid/v1', '/user/(?P<id>\d+)/avatar', array(
             'methods' => 'DELETE',
             'callback' => array($this, 'delete_user_avatar'),
+            'permission_callback' => '__return_true'
+        ));
+        
+        // Admin token validation endpoint
+        register_rest_route('warrior-kid/v1', '/admin/validate-token', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'validate_admin_token'),
             'permission_callback' => '__return_true'
         ));
     }
@@ -692,6 +705,80 @@ class WarriorKidCustomPostTypes {
     }
     
     /**
+     * Validate admin login token
+     */
+    public function validate_admin_token($request) {
+        $params = $request->get_json_params();
+        
+        if (empty($params['token'])) {
+            return new WP_Error('missing_token', 'Token is required', array('status' => 400));
+        }
+        
+        $token = $params['token'];
+        
+        // Split token and signature
+        $token_parts = explode('.', $token);
+        if (count($token_parts) !== 2) {
+            return new WP_Error('invalid_token', 'Invalid token format', array('status' => 400));
+        }
+        
+        $token_data_encoded = $token_parts[0];
+        $signature = $token_parts[1];
+        
+        // Verify signature
+        $expected_signature = hash_hmac('sha256', $token_data_encoded, wp_salt('auth'));
+        if (!hash_equals($expected_signature, $signature)) {
+            return new WP_Error('invalid_signature', 'Invalid token signature', array('status' => 401));
+        }
+        
+        // Decode token data
+        $token_data = json_decode(base64_decode($token_data_encoded), true);
+        if (!$token_data) {
+            return new WP_Error('invalid_token_data', 'Invalid token data', array('status' => 400));
+        }
+        
+        // Check if token exists in transients
+        $stored_data = get_transient('warrior_admin_token_' . md5($token));
+        if (!$stored_data) {
+            return new WP_Error('token_expired', 'Token has expired or is invalid', array('status' => 401));
+        }
+        
+        // Check expiration
+        if (time() > $token_data['expires']) {
+            delete_transient('warrior_admin_token_' . md5($token));
+            return new WP_Error('token_expired', 'Token has expired', array('status' => 401));
+        }
+        
+        // Get warrior data
+        $warrior_id = $token_data['warrior_id'];
+        $warrior_post = get_post($warrior_id);
+        
+        if (!$warrior_post || $warrior_post->post_type !== 'warrior_users') {
+            return new WP_Error('warrior_not_found', 'Warrior not found', array('status' => 404));
+        }
+        
+        // Update last login
+        update_field('last_login', current_time('mysql'), $warrior_id);
+        
+        // Return warrior data
+        $warrior_data = array(
+            'id' => $warrior_id,
+            'name' => get_field('name', $warrior_id),
+            'age' => get_field('age', $warrior_id),
+            'total_screen_time' => get_field('total_screen_time', $warrior_id) ?: 0,
+            'created_at' => get_field('created_at', $warrior_id),
+            'last_login' => current_time('mysql'),
+            'admin_mode' => true,
+            'admin_user_id' => $token_data['admin_user_id']
+        );
+        
+        // Delete the token after use (single use)
+        delete_transient('warrior_admin_token_' . md5($token));
+        
+        return rest_ensure_response($warrior_data);
+    }
+    
+    /**
      * Allow anonymous access to our custom endpoints
      */
     public function allow_anonymous_access($result) {
@@ -707,6 +794,177 @@ class WarriorKidCustomPostTypes {
         
         // For all other requests, use default authentication
         return $result;
+    }
+    
+    /**
+     * Add admin actions and handlers
+     */
+    public function add_admin_actions() {
+        // Handle admin login as warrior action
+        if (isset($_GET['action']) && $_GET['action'] === 'login_as_warrior' && isset($_GET['warrior_id'])) {
+            $this->handle_login_as_warrior();
+        }
+    }
+    
+    /**
+     * Add custom row actions to warrior users list
+     */
+    public function add_warrior_row_actions($actions, $post) {
+        if ($post->post_type === 'warrior_users' && current_user_can('manage_options')) {
+            $warrior_name = get_field('name', $post->ID);
+            $login_url = add_query_arg(array(
+                'action' => 'login_as_warrior',
+                'warrior_id' => $post->ID,
+                'nonce' => wp_create_nonce('login_as_warrior_' . $post->ID)
+            ), admin_url('edit.php?post_type=warrior_users'));
+            
+            $actions['login_as_warrior'] = sprintf(
+                '<a href="%s" style="color: #2271b1; font-weight: bold;" title="Login as %s in the React app">🚀 Login as Warrior</a>',
+                esc_url($login_url),
+                esc_attr($warrior_name)
+            );
+        }
+        return $actions;
+    }
+    
+    /**
+     * Add meta box to warrior edit screen
+     */
+    public function add_warrior_meta_boxes() {
+        add_meta_box(
+            'warrior_admin_actions',
+            '🚀 Admin Actions',
+            array($this, 'warrior_admin_actions_meta_box'),
+            'warrior_users',
+            'side',
+            'high'
+        );
+    }
+    
+    /**
+     * Render admin actions meta box
+     */
+    public function warrior_admin_actions_meta_box($post) {
+        $warrior_name = get_field('name', $post->ID);
+        $warrior_age = get_field('age', $post->ID);
+        $last_login = get_field('last_login', $post->ID);
+        
+        $login_url = add_query_arg(array(
+            'action' => 'login_as_warrior',
+            'warrior_id' => $post->ID,
+            'nonce' => wp_create_nonce('login_as_warrior_' . $post->ID)
+        ), admin_url('edit.php?post_type=warrior_users'));
+        
+        echo '<div style="text-align: center; padding: 1rem;">';
+        echo '<h4 style="margin-top: 0;">👤 ' . esc_html($warrior_name) . '</h4>';
+        echo '<p><strong>Age:</strong> ' . esc_html($warrior_age) . '</p>';
+        if ($last_login) {
+            echo '<p><strong>Last Login:</strong><br>' . date('M j, Y g:i A', strtotime($last_login)) . '</p>';
+        }
+        echo '<hr style="margin: 1rem 0;">';
+        echo '<a href="' . esc_url($login_url) . '" class="button button-primary button-large" style="width: 100%; text-align: center; margin-bottom: 0.5rem;">';
+        echo '🚀 Login as ' . esc_html($warrior_name) . '</a>';
+        echo '<p style="font-size: 0.9em; color: #666; margin: 0.5rem 0 0 0;">This will open the React app logged in as this warrior for testing and troubleshooting.</p>';
+        echo '</div>';
+    }
+    
+    /**
+     * Handle login as warrior action
+     */
+    public function handle_login_as_warrior() {
+        // Security checks
+        if (!current_user_can('manage_options')) {
+            wp_die('Unauthorized access.');
+        }
+        
+        $warrior_id = intval($_GET['warrior_id']);
+        $nonce = $_GET['nonce'];
+        
+        if (!wp_verify_nonce($nonce, 'login_as_warrior_' . $warrior_id)) {
+            wp_die('Security check failed.');
+        }
+        
+        // Verify warrior exists
+        $warrior_post = get_post($warrior_id);
+        if (!$warrior_post || $warrior_post->post_type !== 'warrior_users') {
+            wp_die('Warrior not found.');
+        }
+        
+        // Generate secure login token
+        $token = $this->generate_admin_login_token($warrior_id);
+        
+        // Get React app URL
+        $react_app_url = get_option('warrior_kid_react_app_url', 'https://warriorpath.fit/app');
+        
+        // Redirect to React app with token
+        $redirect_url = add_query_arg(array(
+            'admin_token' => $token,
+            'warrior_id' => $warrior_id
+        ), $react_app_url);
+        
+        wp_redirect($redirect_url);
+        exit;
+    }
+    
+    /**
+     * Generate secure admin login token
+     */
+    private function generate_admin_login_token($warrior_id) {
+        $token_data = array(
+            'warrior_id' => $warrior_id,
+            'admin_user_id' => get_current_user_id(),
+            'timestamp' => time(),
+            'expires' => time() + (30 * 60) // 30 minutes
+        );
+        
+        // Create secure token
+        $token = base64_encode(json_encode($token_data));
+        $signature = hash_hmac('sha256', $token, wp_salt('auth'));
+        $secure_token = $token . '.' . $signature;
+        
+        // Store token temporarily
+        set_transient('warrior_admin_token_' . md5($secure_token), $token_data, 30 * 60);
+        
+        return $secure_token;
+    }
+    
+    /**
+     * Add admin styles
+     */
+    public function add_admin_styles() {
+        $screen = get_current_screen();
+        if ($screen && ($screen->post_type === 'warrior_users' || $screen->id === 'edit-warrior_users')) {
+            echo '<style>
+                .warrior-admin-actions {
+                    background: #f0f6fc;
+                    border: 1px solid #c3c4c7;
+                    border-radius: 4px;
+                    padding: 1rem;
+                    margin: 1rem 0;
+                }
+                .warrior-login-button {
+                    background: #2271b1 !important;
+                    border-color: #2271b1 !important;
+                    color: white !important;
+                    text-decoration: none !important;
+                    display: inline-block;
+                    padding: 8px 16px;
+                    border-radius: 4px;
+                    font-weight: bold;
+                }
+                .warrior-login-button:hover {
+                    background: #135e96 !important;
+                    border-color: #135e96 !important;
+                }
+                .row-actions .login_as_warrior a {
+                    color: #2271b1 !important;
+                    font-weight: bold !important;
+                }
+                .row-actions .login_as_warrior a:hover {
+                    color: #135e96 !important;
+                }
+            </style>';
+        }
     }
     
     /**

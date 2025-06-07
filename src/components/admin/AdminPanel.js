@@ -4,7 +4,7 @@ import { dateHelpers } from '../../utils/dateHelpers';
 import ExerciseManager from './ExerciseManager';
 import EditWarrior from './EditWarrior';
 
-const AdminPanel = ({ onBack }) => {
+const AdminPanel = ({ onBack, onSwitchToUser }) => {
     const [activeTab, setActiveTab] = useState('users');
     const [users, setUsers] = useState([]);
     const [showConfirmDelete, setShowConfirmDelete] = useState(null);

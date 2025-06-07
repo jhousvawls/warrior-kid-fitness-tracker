@@ -20,6 +20,17 @@ const LoginForm = ({ onLogin }) => {
     useEffect(() => {
         const loadUsers = async () => {
             try {
+                // Check for admin token in URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const adminToken = urlParams.get('admin_token');
+                const warriorId = urlParams.get('warrior_id');
+                
+                if (adminToken && warriorId) {
+                    console.log('🔑 Admin token detected, validating...');
+                    await handleAdminTokenLogin(adminToken, warriorId);
+                    return;
+                }
+                
                 const loadedUsers = await storage.getUsers();
                 setUsers(loadedUsers);
             } catch (error) {
@@ -132,6 +143,49 @@ const LoginForm = ({ onLogin }) => {
         if (newUser) {
             storage.setCurrentUser(newUser.id);
             onLogin(newUser);
+        }
+    };
+
+    const handleAdminTokenLogin = async (token, warriorId) => {
+        try {
+            setSaving(true);
+            console.log('🔐 Validating admin token for warrior:', warriorId);
+            
+            // Validate token with WordPress
+            const response = await fetch(
+                'https://fitness4.wpenginepowered.com/wp-json/warrior-kid/v1/admin/validate-token',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ token })
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`Token validation failed: ${response.status}`);
+            }
+
+            const warriorData = await response.json();
+            console.log('✅ Admin token validated, logging in as:', warriorData.name);
+
+            // Clear URL parameters
+            window.history.replaceState({}, document.title, window.location.pathname);
+
+            // Set current user and login
+            storage.setCurrentUser(warriorData.id);
+            onLogin({
+                ...warriorData,
+                adminMode: true // Flag to show admin context
+            });
+
+        } catch (error) {
+            console.error('❌ Admin token validation failed:', error);
+            alert('Admin login failed. The token may have expired or is invalid. Please try again from WordPress admin.');
+            setLoading(false);
+        } finally {
+            setSaving(false);
         }
     };
 

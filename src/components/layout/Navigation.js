@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
 const Navigation = ({ currentView, onViewChange, currentUser, screenTime, onLogout, onAdminAccess }) => {
+    const isAdminMode = currentUser && currentUser.adminMode;
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const formatScreenTime = (minutes) => {
@@ -29,8 +30,41 @@ const Navigation = ({ currentView, onViewChange, currentUser, screenTime, onLogo
     };
 
     return (
-        <header className="header">
-            <div className="header-left">
+        <>
+            {/* Admin Mode Banner */}
+            {isAdminMode && (
+                <div style={{
+                    background: 'linear-gradient(135deg, #ff6b6b, #ee5a24)',
+                    color: 'white',
+                    padding: '0.5rem 1rem',
+                    textAlign: 'center',
+                    fontSize: '0.9rem',
+                    fontWeight: 'bold',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                    position: 'relative',
+                    zIndex: 1001
+                }}>
+                    🔧 ADMIN MODE: Viewing as {currentUser.name} • 
+                    <button 
+                        onClick={() => window.location.href = 'https://fitness4.wpenginepowered.com/wp-admin/edit.php?post_type=warrior_users'}
+                        style={{
+                            background: 'rgba(255,255,255,0.2)',
+                            border: '1px solid rgba(255,255,255,0.3)',
+                            color: 'white',
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '4px',
+                            fontSize: '0.8rem',
+                            marginLeft: '0.5rem',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        Return to WordPress Admin
+                    </button>
+                </div>
+            )}
+            
+            <header className="header">
+                <div className="header-left">
                 <div className="logo">
                     🏆 Warrior Kid Fitness
                 </div>
@@ -151,6 +185,7 @@ const Navigation = ({ currentView, onViewChange, currentUser, screenTime, onLogo
                 ></div>
             )}
         </header>
+        </>
     );
 };
 
