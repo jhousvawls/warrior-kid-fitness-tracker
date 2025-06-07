@@ -1,7 +1,7 @@
 // WordPress API service for user data management
 // This replaces localStorage with WordPress custom post types
 
-const API_BASE = process.env.REACT_APP_WORDPRESS_API_URL || 'https://fitness4.wpenginepowered.com/wp-json';
+const API_BASE = (process.env.REACT_APP_WORDPRESS_API_URL || process.env.REACT_APP_WP_API_URL || 'https://fitness4.wpenginepowered.com/wp-json').replace('/wp/v2', '');
 
 class WordPressUserAPI {
     constructor() {
