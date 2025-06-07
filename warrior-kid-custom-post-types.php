@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Warrior Kid Custom Post Types
  * Description: Custom post types and API endpoints for the Warrior Kid Fitness Tracker React app
- * Version: 1.0.0
+ * Version: 2.0.0
  * Author: Warrior Kid Fitness
  */
 
