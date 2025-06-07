@@ -1,5 +1,6 @@
 // WordPress API service for user data management
 // This replaces localStorage with WordPress custom post types
+// Cache bust: 2025-06-06-21:15
 
 const API_BASE = (process.env.REACT_APP_WORDPRESS_API_URL || process.env.REACT_APP_WP_API_URL || 'https://fitness4.wpenginepowered.com/wp-json').replace('/wp/v2', '');
 
@@ -94,7 +95,8 @@ class WordPressUserAPI {
                 user: user,
                 hasWpId: !!user.wpId,
                 hasWordpressId: !!user.wordpressId,
-                isNewUser: !user.wpId && !user.wordpressId && user.id && user.id.length > 10
+                isNewUser: !user.wpId && !user.wordpressId && user.id && user.id.length > 10,
+                timestamp: new Date().toISOString()
             });
 
             // Force new user creation for users with timestamp-based IDs (new users)
