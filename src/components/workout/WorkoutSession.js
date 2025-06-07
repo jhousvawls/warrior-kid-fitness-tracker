@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { storage } from '../../utils/localStorage';
 import { dateHelpers } from '../../utils/dateHelpers';
 import exerciseService from '../../data/exerciseService';
+import debugLogger from '../../utils/debugLogger';
 
 // Power-up messages for motivation
 const POWER_UP_MESSAGES = [
@@ -50,10 +51,13 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
         const loadExercises = async () => {
             try {
                 setIsLoadingExercises(true);
+                debugLogger.logWorkoutStart(user, 'regular');
                 const loadedExercises = await exerciseService.getExercises();
                 setExercises(loadedExercises);
+                debugLogger.log('WORKOUT', `Loaded ${loadedExercises.length} exercises for workout`);
                 console.log('💪 Loaded exercises for workout:', loadedExercises.length);
             } catch (error) {
+                debugLogger.log('ERROR', 'Failed to load exercises', error);
                 console.error('Error loading exercises:', error);
                 // Fallback will be handled by exerciseService
                 const fallbackExercises = await exerciseService.getExercises();
@@ -64,7 +68,7 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
         };
 
         loadExercises();
-    }, []);
+    }, [user]);
 
     const completeWorkout = useCallback(async () => {
         const screenTimeEarned = totalRounds * 10; // 10 minutes per round
@@ -78,23 +82,40 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
             completedAt: new Date().toISOString()
         };
 
+        debugLogger.logWorkoutComplete(user, workout);
+
         // Save workout
         try {
+            debugLogger.log('WORKOUT', `Saving workout for user ${user.id} with ${screenTimeEarned} minutes screen time`);
             console.log('💾 Saving workout for user:', user.id, 'with screen time:', screenTimeEarned);
+            
+            // Get current screen time before adding new amount
+            const currentScreenTime = await storage.getScreenTime(user.id);
+            debugLogger.log('SCREEN_TIME', `Current screen time before workout completion: ${currentScreenTime} minutes`);
+            
             await storage.saveWorkout(workout);
+            debugLogger.log('SUCCESS', 'Workout saved successfully');
 
             // Ensure screen time is properly recorded (in addition to per-round awards)
+            debugLogger.logScreenTimeAttempt(user.id, screenTimeEarned);
             console.log('🎮 Adding final screen time bonus:', screenTimeEarned);
+            
             await storage.addScreenTime(user.id, screenTimeEarned);
+            
+            // Verify screen time was added
+            const newScreenTime = await storage.getScreenTime(user.id);
+            debugLogger.logScreenTimeSuccess(user.id, currentScreenTime, newScreenTime);
 
             // Save pull-up progress if any pull-ups were completed
             const pullupData = completedExercises.filter(e => e.reps);
             if (pullupData.length > 0) {
                 const totalPullups = pullupData.reduce((sum, e) => sum + e.reps, 0);
+                debugLogger.log('WORKOUT', `Saving pullup progress: ${totalPullups} reps`);
                 console.log('💪 Saving pullup progress:', totalPullups);
                 await storage.savePullupProgress(user.id, totalPullups, dateHelpers.getTodayString());
             }
 
+            debugLogger.log('SUCCESS', 'Workout completion process finished successfully');
             console.log('✅ Workout completion saved successfully');
             
             // Longer delay to ensure all data is properly saved
@@ -102,6 +123,7 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
                 onComplete();
             }, 500);
         } catch (error) {
+            debugLogger.logScreenTimeError(user.id, error);
             console.error('❌ Error saving workout:', error);
             // Still complete the workout even if saving fails
             setTimeout(() => {
@@ -153,13 +175,17 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
 
         if (isLastExercise) {
             // Award 10 minutes of screen time for completing this cycle/round
+            debugLogger.logScreenTimeAttempt(user.id, 10);
+            debugLogger.log('WORKOUT', `Round ${currentRound} completed - awarding 10 minutes screen time`);
             storage.addScreenTime(user.id, 10);
             
             if (isLastRound) {
                 // Show choice dialog after completing the last exercise of the last round
+                debugLogger.log('WORKOUT', 'All rounds completed - showing continue choice dialog');
                 setShowContinueChoice(true);
             } else {
                 // Start next round
+                debugLogger.log('WORKOUT', `Starting round ${currentRound + 1}`);
                 setCurrentRound(currentRound + 1);
                 setCurrentExerciseIndex(0);
                 setIsResting(true);
@@ -168,6 +194,7 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
             }
         } else {
             // Move to next exercise
+            debugLogger.log('WORKOUT', `Moving to exercise ${currentExerciseIndex + 2} of ${exercises.length}`);
             setCurrentExerciseIndex(currentExerciseIndex + 1);
             setIsResting(true);
             setTimer(15); // 15 second rest between exercises

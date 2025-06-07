@@ -1,5 +1,6 @@
 // Storage utilities for Warrior Kid App - Now using WordPress backend
 import { wordpressUserAPI } from '../services/wordpressUserAPI';
+import debugLogger from './debugLogger';
 
 // Fallback localStorage keys for offline mode
 const STORAGE_KEYS = {
@@ -142,40 +143,69 @@ export const storage = {
     // Screen time tracking
     getScreenTime: async (userId) => {
         try {
+            debugLogger.log('STORAGE', `Getting screen time for user ${userId}`);
             if (isOnline()) {
-                return await wordpressUserAPI.getScreenTime(userId);
+                const screenTime = await wordpressUserAPI.getScreenTime(userId);
+                debugLogger.logStorageOperation('GET', 'screen_time_wordpress', { userId, screenTime }, true);
+                return screenTime;
             } else {
                 // Fallback to localStorage when offline
                 const screenTime = localStorage.getItem(STORAGE_KEYS.SCREEN_TIME);
                 const allScreenTime = screenTime ? JSON.parse(screenTime) : {};
-                return allScreenTime[userId] || 0;
+                const userScreenTime = allScreenTime[userId] || 0;
+                debugLogger.logStorageOperation('GET', 'screen_time_localStorage', { userId, screenTime: userScreenTime }, true);
+                return userScreenTime;
             }
         } catch (error) {
+            debugLogger.logStorageOperation('GET', 'screen_time_wordpress', { userId, error }, false);
             console.warn('WordPress API unavailable, using localStorage fallback:', error);
             const screenTime = localStorage.getItem(STORAGE_KEYS.SCREEN_TIME);
             const allScreenTime = screenTime ? JSON.parse(screenTime) : {};
-            return allScreenTime[userId] || 0;
+            const userScreenTime = allScreenTime[userId] || 0;
+            debugLogger.logStorageOperation('GET', 'screen_time_localStorage_fallback', { userId, screenTime: userScreenTime }, true);
+            return userScreenTime;
         }
     },
     
     addScreenTime: async (userId, minutes) => {
+        debugLogger.log('STORAGE', `Adding ${minutes} minutes screen time for user ${userId}`);
+        
         try {
+            // Get current screen time first
+            const currentScreenTime = localStorage.getItem(STORAGE_KEYS.SCREEN_TIME);
+            const allScreenTime = currentScreenTime ? JSON.parse(currentScreenTime) : {};
+            const oldAmount = allScreenTime[userId] || 0;
+            
+            debugLogger.log('SCREEN_TIME', `Current screen time before adding: ${oldAmount} minutes`);
+            
             if (isOnline()) {
+                debugLogger.logWordPressOperation('ADD_SCREEN_TIME', '/wp-json/warrior-kid/v1/screen-time', { userId, minutes }, false);
                 await wordpressUserAPI.addScreenTime(userId, minutes);
+                debugLogger.logWordPressOperation('ADD_SCREEN_TIME', '/wp-json/warrior-kid/v1/screen-time', { userId, minutes }, true);
             }
             
             // Always update localStorage as backup
-            const screenTime = localStorage.getItem(STORAGE_KEYS.SCREEN_TIME);
-            const allScreenTime = screenTime ? JSON.parse(screenTime) : {};
-            allScreenTime[userId] = (allScreenTime[userId] || 0) + minutes;
+            allScreenTime[userId] = oldAmount + minutes;
             localStorage.setItem(STORAGE_KEYS.SCREEN_TIME, JSON.stringify(allScreenTime));
+            
+            const newAmount = allScreenTime[userId];
+            debugLogger.logStorageOperation('ADD', 'screen_time_localStorage', { userId, oldAmount, newAmount, added: minutes }, true);
+            debugLogger.logScreenTimeSuccess(userId, oldAmount, newAmount);
+            
         } catch (error) {
+            debugLogger.logWordPressOperation('ADD_SCREEN_TIME', '/wp-json/warrior-kid/v1/screen-time', { userId, minutes }, false, error);
+            debugLogger.logScreenTimeError(userId, error);
             console.warn('Failed to add screen time to WordPress, saved locally:', error);
+            
             // Fallback to localStorage only
             const screenTime = localStorage.getItem(STORAGE_KEYS.SCREEN_TIME);
             const allScreenTime = screenTime ? JSON.parse(screenTime) : {};
-            allScreenTime[userId] = (allScreenTime[userId] || 0) + minutes;
+            const oldAmount = allScreenTime[userId] || 0;
+            allScreenTime[userId] = oldAmount + minutes;
             localStorage.setItem(STORAGE_KEYS.SCREEN_TIME, JSON.stringify(allScreenTime));
+            
+            const newAmount = allScreenTime[userId];
+            debugLogger.logStorageOperation('ADD', 'screen_time_localStorage_fallback', { userId, oldAmount, newAmount, added: minutes }, true);
         }
     },
     
