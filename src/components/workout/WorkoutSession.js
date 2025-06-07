@@ -67,38 +67,46 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
     }, []);
 
     const completeWorkout = useCallback(async () => {
+        const screenTimeEarned = totalRounds * 10; // 10 minutes per round
         const workout = {
             id: Date.now().toString(),
             userId: user.id,
             date: dateHelpers.getTodayString(),
             exercises: completedExercises,
             rounds: totalRounds,
+            screenTimeEarned: screenTimeEarned,
             completedAt: new Date().toISOString()
         };
 
         // Save workout
         try {
+            console.log('💾 Saving workout for user:', user.id, 'with screen time:', screenTimeEarned);
             await storage.saveWorkout(workout);
 
-            // Note: Screen time is already awarded after each cycle completion
+            // Ensure screen time is properly recorded (in addition to per-round awards)
+            console.log('🎮 Adding final screen time bonus:', screenTimeEarned);
+            await storage.addScreenTime(user.id, screenTimeEarned);
 
             // Save pull-up progress if any pull-ups were completed
             const pullupData = completedExercises.filter(e => e.reps);
             if (pullupData.length > 0) {
                 const totalPullups = pullupData.reduce((sum, e) => sum + e.reps, 0);
+                console.log('💪 Saving pullup progress:', totalPullups);
                 await storage.savePullupProgress(user.id, totalPullups, dateHelpers.getTodayString());
             }
 
-            // Small delay to ensure data is saved before navigating back
+            console.log('✅ Workout completion saved successfully');
+            
+            // Longer delay to ensure all data is properly saved
             setTimeout(() => {
                 onComplete();
-            }, 100);
+            }, 500);
         } catch (error) {
-            console.error('Error saving workout:', error);
+            console.error('❌ Error saving workout:', error);
             // Still complete the workout even if saving fails
             setTimeout(() => {
                 onComplete();
-            }, 100);
+            }, 500);
         }
     }, [user.id, completedExercises, totalRounds, onComplete]);
 
@@ -178,15 +186,15 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
         } else if (timer === 0 && isTimerRunning) {
             setIsTimerRunning(false);
             // Auto-complete timed exercises when timer reaches 0
-            if (currentExercise.type === 'time') {
+            if (currentExercise && currentExercise.type === 'time') {
                 handleExerciseComplete();
             }
         }
         return () => clearInterval(interval);
-    }, [timer, isTimerRunning, currentExercise.type, handleExerciseComplete]);
+    }, [timer, isTimerRunning, currentExercise?.type, handleExerciseComplete]);
 
     const startTimer = () => {
-        if (currentExercise.type === 'time') {
+        if (currentExercise && currentExercise.type === 'time') {
             setTimer(currentExercise.target);
             setIsTimerRunning(true);
         }
