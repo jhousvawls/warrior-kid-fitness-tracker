@@ -89,6 +89,14 @@ class WordPressUserAPI {
 
     async saveUser(user) {
         try {
+            // Debug logging to see user object
+            console.log('🔍 saveUser called with user object:', {
+                user: user,
+                hasWpId: !!user.wpId,
+                hasWordpressId: !!user.wordpressId,
+                willUseCustomEndpoint: !user.wpId && !user.wordpressId
+            });
+
             // Always use custom plugin endpoint for new user creation
             // Check if this is a new user (no wpId and no existing WordPress ID)
             if (!user.wpId && !user.wordpressId) {
