@@ -38,11 +38,6 @@ const LoginForm = ({ onLogin }) => {
         });
     };
 
-    const handleExistingUserLogin = (user) => {
-        setFormData({ name: user.name, age: user.age.toString(), password: '' });
-        // For existing users, go directly to math challenge
-        setShowMathChallenge(true);
-    };
 
     const handleNewUserSubmit = (e) => {
         e.preventDefault();
