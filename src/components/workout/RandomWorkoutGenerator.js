@@ -139,7 +139,7 @@ const RandomWorkoutGenerator = ({ user, onWorkoutGenerated, onCancel }) => {
             setGeneratedWorkout(workout);
             setGenerating(false);
         }, 1500); // Simulate generation time
-    }, [user.age]);
+    }, [user.age, getExercisePool]);
 
     useEffect(() => {
         generateWorkout();

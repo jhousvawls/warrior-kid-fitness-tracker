@@ -34,7 +34,7 @@ const EnhancedMathChallenge = ({ onSuccess, onCancel, userAge = 10 }) => {
         }
         
         return generatedProblems;
-    }, []);
+    }, [generateSimpleProblem, generateIntermediateProblem, generateAdvancedProblem, generateExpertProblem]);
 
     const generateSimpleProblem = () => {
         const operations = ['+', '-'];
