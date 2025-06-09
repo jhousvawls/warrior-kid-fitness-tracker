@@ -50,11 +50,11 @@ const RandomWorkoutGenerator = ({ user, onWorkoutGenerated, onCancel }) => {
     };
 
     // Get age-appropriate exercise pool
-    const getExercisePool = (age) => {
+    const getExercisePool = useCallback((age) => {
         if (age <= 8) return exerciseDatabase.beginner;
         if (age <= 12) return exerciseDatabase.intermediate;
         return exerciseDatabase.advanced;
-    };
+    }, []);
 
     // Generate a balanced 10-minute workout
     const generateWorkout = useCallback(() => {

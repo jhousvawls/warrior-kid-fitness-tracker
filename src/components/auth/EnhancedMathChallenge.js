@@ -8,35 +8,7 @@ const EnhancedMathChallenge = ({ onSuccess, onCancel, userAge = 10 }) => {
     const [correctAnswers, setCorrectAnswers] = useState(0);
     const [showResult, setShowResult] = useState(false);
 
-    // Generate age-appropriate math problems
-    const generateProblems = useCallback((age) => {
-        const problemCount = 3; // 3 problems to complete
-        const generatedProblems = [];
-
-        for (let i = 0; i < problemCount; i++) {
-            let problem;
-            
-            if (age <= 7) {
-                // Ages 5-7: Simple addition and subtraction (single digits)
-                problem = generateSimpleProblem();
-            } else if (age <= 10) {
-                // Ages 8-10: Addition, subtraction, and basic multiplication
-                problem = generateIntermediateProblem();
-            } else if (age <= 13) {
-                // Ages 11-13: More complex operations including division
-                problem = generateAdvancedProblem();
-            } else {
-                // Ages 14+: Advanced math with fractions and word problems
-                problem = generateExpertProblem();
-            }
-            
-            generatedProblems.push(problem);
-        }
-        
-        return generatedProblems;
-    }, [generateSimpleProblem, generateIntermediateProblem, generateAdvancedProblem, generateExpertProblem]);
-
-    const generateSimpleProblem = () => {
+    const generateSimpleProblem = useCallback(() => {
         const operations = ['+', '-'];
         const operation = operations[Math.floor(Math.random() * operations.length)];
         
@@ -58,9 +30,9 @@ const EnhancedMathChallenge = ({ onSuccess, onCancel, userAge = 10 }) => {
             type: 'arithmetic',
             difficulty: 'Beginner'
         };
-    };
+    }, []);
 
-    const generateIntermediateProblem = () => {
+    const generateIntermediateProblem = useCallback(() => {
         const operations = ['+', '-', '×'];
         const operation = operations[Math.floor(Math.random() * operations.length)];
         
@@ -86,48 +58,9 @@ const EnhancedMathChallenge = ({ onSuccess, onCancel, userAge = 10 }) => {
             type: 'arithmetic',
             difficulty: 'Intermediate'
         };
-    };
+    }, []);
 
-    const generateAdvancedProblem = () => {
-        const problemTypes = ['arithmetic', 'word'];
-        const type = problemTypes[Math.floor(Math.random() * problemTypes.length)];
-        
-        if (type === 'word') {
-            return generateWordProblem();
-        }
-        
-        const operations = ['+', '-', '×', '÷'];
-        const operation = operations[Math.floor(Math.random() * operations.length)];
-        
-        let num1, num2, answer;
-        
-        if (operation === '+') {
-            num1 = Math.floor(Math.random() * 200) + 50; // 50-249
-            num2 = Math.floor(Math.random() * 100) + 25; // 25-124
-            answer = num1 + num2;
-        } else if (operation === '-') {
-            num1 = Math.floor(Math.random() * 200) + 100; // 100-299
-            num2 = Math.floor(Math.random() * 50) + 10;   // 10-59
-            answer = num1 - num2;
-        } else if (operation === '×') {
-            num1 = Math.floor(Math.random() * 15) + 5;    // 5-19
-            num2 = Math.floor(Math.random() * 10) + 3;    // 3-12
-            answer = num1 * num2;
-        } else { // division
-            answer = Math.floor(Math.random() * 20) + 5;  // 5-24
-            num2 = Math.floor(Math.random() * 8) + 2;     // 2-9
-            num1 = answer * num2;
-        }
-        
-        return {
-            question: `${num1} ${operation} ${num2} = ?`,
-            answer: answer,
-            type: 'arithmetic',
-            difficulty: 'Advanced'
-        };
-    };
-
-    const generateWordProblem = () => {
+    const generateWordProblem = useCallback(() => {
         const scenarios = [
             {
                 story: "Sarah has {num1} stickers. She gives {num2} stickers to her friend. How many stickers does Sarah have left?",
@@ -183,9 +116,48 @@ const EnhancedMathChallenge = ({ onSuccess, onCancel, userAge = 10 }) => {
             type: 'word',
             difficulty: 'Advanced'
         };
-    };
+    }, []);
 
-    const generateExpertProblem = () => {
+    const generateAdvancedProblem = useCallback(() => {
+        const problemTypes = ['arithmetic', 'word'];
+        const type = problemTypes[Math.floor(Math.random() * problemTypes.length)];
+        
+        if (type === 'word') {
+            return generateWordProblem();
+        }
+        
+        const operations = ['+', '-', '×', '÷'];
+        const operation = operations[Math.floor(Math.random() * operations.length)];
+        
+        let num1, num2, answer;
+        
+        if (operation === '+') {
+            num1 = Math.floor(Math.random() * 200) + 50; // 50-249
+            num2 = Math.floor(Math.random() * 100) + 25; // 25-124
+            answer = num1 + num2;
+        } else if (operation === '-') {
+            num1 = Math.floor(Math.random() * 200) + 100; // 100-299
+            num2 = Math.floor(Math.random() * 50) + 10;   // 10-59
+            answer = num1 - num2;
+        } else if (operation === '×') {
+            num1 = Math.floor(Math.random() * 15) + 5;    // 5-19
+            num2 = Math.floor(Math.random() * 10) + 3;    // 3-12
+            answer = num1 * num2;
+        } else { // division
+            answer = Math.floor(Math.random() * 20) + 5;  // 5-24
+            num2 = Math.floor(Math.random() * 8) + 2;     // 2-9
+            num1 = answer * num2;
+        }
+        
+        return {
+            question: `${num1} ${operation} ${num2} = ?`,
+            answer: answer,
+            type: 'arithmetic',
+            difficulty: 'Advanced'
+        };
+    }, [generateWordProblem]);
+
+    const generateExpertProblem = useCallback(() => {
         const problemTypes = ['fraction', 'percentage', 'algebra'];
         const type = problemTypes[Math.floor(Math.random() * problemTypes.length)];
         
@@ -226,7 +198,36 @@ const EnhancedMathChallenge = ({ onSuccess, onCancel, userAge = 10 }) => {
                 difficulty: 'Expert'
             };
         }
-    };
+    }, []);
+
+    // Generate age-appropriate math problems
+    const generateProblems = useCallback((age) => {
+        const problemCount = 3; // 3 problems to complete
+        const generatedProblems = [];
+
+        for (let i = 0; i < problemCount; i++) {
+            let problem;
+            
+            if (age <= 7) {
+                // Ages 5-7: Simple addition and subtraction (single digits)
+                problem = generateSimpleProblem();
+            } else if (age <= 10) {
+                // Ages 8-10: Addition, subtraction, and basic multiplication
+                problem = generateIntermediateProblem();
+            } else if (age <= 13) {
+                // Ages 11-13: More complex operations including division
+                problem = generateAdvancedProblem();
+            } else {
+                // Ages 14+: Advanced math with fractions and word problems
+                problem = generateExpertProblem();
+            }
+            
+            generatedProblems.push(problem);
+        }
+        
+        return generatedProblems;
+    }, [generateSimpleProblem, generateIntermediateProblem, generateAdvancedProblem, generateExpertProblem]);
+
 
     useEffect(() => {
         const newProblems = generateProblems(userAge);
