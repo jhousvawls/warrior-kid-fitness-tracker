@@ -42,7 +42,7 @@ const LoginForm = ({ onLogin }) => {
         };
         
         loadUsers();
-    }, []);
+    }, [handleAdminTokenLogin]);
 
     const handleInputChange = (e) => {
         setFormData({
@@ -257,7 +257,7 @@ const LoginForm = ({ onLogin }) => {
         <div className="auth-container">
             <div className="auth-form">
                 <h1 style={{ textAlign: 'center', marginBottom: '2rem', color: 'var(--navy-blue)' }}>
-                    🏆 Warrior Kid Fitness Tracker
+                    🏆 Warrior Path Fitness
                 </h1>
                 
                 <div style={{ marginBottom: '2rem' }}>

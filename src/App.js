@@ -10,6 +10,7 @@ import ProgressTracker from './components/progress/ProgressTracker';
 import AdminAuth from './components/admin/AdminAuth';
 import AdminPanel from './components/admin/AdminPanel';
 import Navigation from './components/layout/Navigation';
+import UserProfile from './components/user/UserProfile';
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
@@ -29,6 +30,7 @@ const FitnessApp = () => {
     const [showRandomWorkout, setShowRandomWorkout] = useState(false);
     const [showEnhancedMath, setShowEnhancedMath] = useState(false);
     const [randomWorkoutData, setRandomWorkoutData] = useState(null);
+    const [showUserProfile, setShowUserProfile] = useState(false);
 
     useEffect(() => {
         // Check for existing logged-in user
@@ -110,6 +112,7 @@ const FitnessApp = () => {
                 screenTime={screenTime}
                 onLogout={handleLogout}
                 onAdminAccess={handleAdminAccess}
+                onProfileClick={() => setShowUserProfile(true)}
             />
 
             {/* Main Content */}
@@ -198,6 +201,19 @@ const FitnessApp = () => {
                         }}
                     />
                 )}
+
+                {/* User Profile Modal */}
+                {showUserProfile && (
+                    <UserProfile
+                        user={currentUser}
+                        onClose={() => setShowUserProfile(false)}
+                        onUserUpdate={(updatedUser) => {
+                            setCurrentUser(updatedUser);
+                            storage.saveUser(updatedUser);
+                            setShowUserProfile(false);
+                        }}
+                    />
+                )}
             </main>
 
             {/* Footer */}
@@ -241,7 +257,7 @@ const PublicNavigation = () => {
                     fontWeight: 'bold',
                     color: 'var(--navy-blue)'
                 }}>
-                    🏆 Warrior Kid Fitness
+                    🏆 Warrior Path Fitness
                 </div>
                 
                 <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
@@ -325,7 +341,7 @@ const PublicLayout = ({ children }) => {
                         marginBottom: '2rem'
                     }}>
                         <div>
-                            <h4 style={{ color: 'white', marginBottom: '1rem' }}>Warrior Kid Fitness</h4>
+                            <h4 style={{ color: 'white', marginBottom: '1rem' }}>Warrior Path Fitness</h4>
                             <p style={{ fontSize: '0.9rem', opacity: '0.8', lineHeight: '1.6' }}>
                                 Building discipline, strength, and character through fun fitness challenges for young warriors.
                             </p>

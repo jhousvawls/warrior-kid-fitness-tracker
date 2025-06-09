@@ -130,7 +130,7 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
                 onComplete();
             }, 500);
         }
-    }, [user.id, completedExercises, totalRounds, onComplete]);
+    }, [user, completedExercises, totalRounds, onComplete]);
 
     const handleExerciseComplete = useCallback(() => {
         const exerciseData = {
@@ -202,7 +202,7 @@ const WorkoutSession = ({ user, onComplete, onCancel }) => {
         }
 
         setPullupReps('');
-    }, [currentExercise, pullupReps, completedExercises, comboCount, isLastExercise, isLastRound, user.id, currentRound, currentExerciseIndex]);
+    }, [currentExercise, pullupReps, completedExercises, comboCount, isLastExercise, isLastRound, user.id, currentRound, currentExerciseIndex, exercises.length]);
 
     useEffect(() => {
         let interval;

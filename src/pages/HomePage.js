@@ -31,7 +31,7 @@ const HomePage = () => {
 
     // Default content fallbacks
     const defaultContent = {
-        hero_title: '🏆 Warrior Kid Fitness Tracker',
+        hero_title: '🏆 Warrior Path Fitness',
         hero_subtitle: 'Build discipline, strength, and character through fun fitness challenges designed for young warriors aged 5-18.',
         hero_primary_button_text: '🚀 Start Training Now',
         hero_primary_button_link: '/app',

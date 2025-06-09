@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { storage } from '../../utils/localStorage';
 import { dateHelpers } from '../../utils/dateHelpers';
+import AvatarDisplay from '../user/AvatarDisplay';
 
 const Leaderboard = ({ user, onBack }) => {
     const [weeklyLeaderboard, setWeeklyLeaderboard] = useState([]);
@@ -298,10 +299,17 @@ const Leaderboard = ({ user, onBack }) => {
                                         <div className="leaderboard-rank">
                                             {getRankEmoji(index + 1)} #{index + 1}
                                         </div>
-                                        <div className="leaderboard-name">
-                                            {entry.name} {entry.id === user.id && '(You)'}
-                                            <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>
-                                                Age {entry.age} • {entry.days} days • {entry.screenTime} min earned
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                                            <AvatarDisplay
+                                                userId={entry.id}
+                                                size="medium"
+                                                fallbackName={entry.name}
+                                            />
+                                            <div className="leaderboard-name">
+                                                {entry.name} {entry.id === user.id && '(You)'}
+                                                <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>
+                                                    Age {entry.age} • {entry.days} days • {entry.screenTime} min earned
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="leaderboard-score">
@@ -346,10 +354,17 @@ const Leaderboard = ({ user, onBack }) => {
                                         <div className="leaderboard-rank">
                                             {getRankEmoji(index + 1)} #{index + 1}
                                         </div>
-                                        <div className="leaderboard-name">
-                                            {entry.name} {entry.id === user.id && '(You)'}
-                                            <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>
-                                                Best day: {entry.bestDay} • Improvement: +{entry.improvement}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                                            <AvatarDisplay
+                                                userId={entry.id}
+                                                size="medium"
+                                                fallbackName={entry.name}
+                                            />
+                                            <div className="leaderboard-name">
+                                                {entry.name} {entry.id === user.id && '(You)'}
+                                                <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>
+                                                    Best day: {entry.bestDay} • Improvement: +{entry.improvement}
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="leaderboard-score">
@@ -394,10 +409,17 @@ const Leaderboard = ({ user, onBack }) => {
                                         <div className="leaderboard-rank">
                                             {getRankEmoji(index + 1)} #{index + 1}
                                         </div>
-                                        <div className="leaderboard-name">
-                                            {entry.name} {entry.id === user.id && '(You)'}
-                                            <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>
-                                                Age {entry.age} • {entry.days} days • Last: {dateHelpers.formatDate(entry.lastWorkout)}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                                            <AvatarDisplay
+                                                userId={entry.id}
+                                                size="medium"
+                                                fallbackName={entry.name}
+                                            />
+                                            <div className="leaderboard-name">
+                                                {entry.name} {entry.id === user.id && '(You)'}
+                                                <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>
+                                                    Age {entry.age} • {entry.days} days • Last: {dateHelpers.formatDate(entry.lastWorkout)}
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="leaderboard-score">

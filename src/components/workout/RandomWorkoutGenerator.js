@@ -143,7 +143,7 @@ const RandomWorkoutGenerator = ({ user, onWorkoutGenerated, onCancel }) => {
 
     useEffect(() => {
         generateWorkout();
-    }, []);
+    }, [generateWorkout]);
 
     const handleStartWorkout = () => {
         onWorkoutGenerated(generatedWorkout);

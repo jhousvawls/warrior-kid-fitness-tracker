@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { storage } from '../../utils/localStorage';
 import AvatarDisplay from '../user/AvatarDisplay';
 import AvatarUpload from '../user/AvatarUpload';
@@ -11,7 +11,6 @@ const EditWarrior = ({ user, onSave, onCancel }) => {
     });
     const [showAvatarUpload, setShowAvatarUpload] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [avatarUrls, setAvatarUrls] = useState(null);
 
     const handleInputChange = (e) => {
         setFormData({
@@ -48,8 +47,7 @@ const EditWarrior = ({ user, onSave, onCancel }) => {
         }
     };
 
-    const handleAvatarUpdate = (urls) => {
-        setAvatarUrls(urls);
+    const handleAvatarUpdate = () => {
         setShowAvatarUpload(false);
         console.log('Avatar updated for warrior:', user.name);
     };
@@ -82,7 +80,6 @@ const EditWarrior = ({ user, onSave, onCancel }) => {
             );
 
             if (response.ok) {
-                setAvatarUrls(null);
                 alert('Avatar removed successfully.');
             } else {
                 throw new Error('Failed to delete avatar');

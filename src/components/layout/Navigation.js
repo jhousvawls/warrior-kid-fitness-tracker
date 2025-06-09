@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import AvatarDisplay from '../user/AvatarDisplay';
 
-const Navigation = ({ currentView, onViewChange, currentUser, screenTime, onLogout, onAdminAccess }) => {
+const Navigation = ({ currentView, onViewChange, currentUser, screenTime, onLogout, onAdminAccess, onProfileClick }) => {
     const isAdminMode = currentUser && currentUser.adminMode;
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -66,7 +67,7 @@ const Navigation = ({ currentView, onViewChange, currentUser, screenTime, onLogo
             <header className="header">
                 <div className="header-left">
                 <div className="logo">
-                    🏆 Warrior Kid Fitness
+                    🏆 Warrior Path Fitness
                 </div>
                 
                 {/* Breadcrumb Navigation */}
@@ -94,9 +95,32 @@ const Navigation = ({ currentView, onViewChange, currentUser, screenTime, onLogo
                     🎮 {formatScreenTime(screenTime)}
                 </div>
 
-                {/* User Name */}
-                <div className="user-name">
-                    {currentUser.name}
+                {/* User Avatar & Profile */}
+                <div 
+                    className="user-profile-section"
+                    onClick={onProfileClick}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        cursor: 'pointer',
+                        padding: '0.5rem',
+                        borderRadius: '8px',
+                        transition: 'background-color 0.2s',
+                        ':hover': {
+                            backgroundColor: 'rgba(255,255,255,0.1)'
+                        }
+                    }}
+                    title="View Profile"
+                >
+                    <AvatarDisplay
+                        userId={currentUser.id}
+                        size="small"
+                        fallbackName={currentUser.name}
+                    />
+                    <div className="user-name">
+                        {currentUser.name}
+                    </div>
                 </div>
 
                 {/* Navigation Dropdown */}

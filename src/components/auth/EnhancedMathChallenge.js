@@ -231,7 +231,7 @@ const EnhancedMathChallenge = ({ onSuccess, onCancel, userAge = 10 }) => {
     useEffect(() => {
         const newProblems = generateProblems(userAge);
         setProblems(newProblems);
-    }, [userAge]);
+    }, [userAge, generateProblems]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
