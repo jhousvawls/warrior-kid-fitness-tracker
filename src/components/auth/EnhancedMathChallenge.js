@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const EnhancedMathChallenge = ({ onSuccess, onCancel, userAge = 10 }) => {
     const [problems, setProblems] = useState([]);
@@ -9,7 +9,7 @@ const EnhancedMathChallenge = ({ onSuccess, onCancel, userAge = 10 }) => {
     const [showResult, setShowResult] = useState(false);
 
     // Generate age-appropriate math problems
-    const generateProblems = (age) => {
+    const generateProblems = useCallback((age) => {
         const problemCount = 3; // 3 problems to complete
         const generatedProblems = [];
 
@@ -34,7 +34,7 @@ const EnhancedMathChallenge = ({ onSuccess, onCancel, userAge = 10 }) => {
         }
         
         return generatedProblems;
-    };
+    }, []);
 
     const generateSimpleProblem = () => {
         const operations = ['+', '-'];

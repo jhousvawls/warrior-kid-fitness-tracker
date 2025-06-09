@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { storage } from '../../utils/localStorage';
 import MathChallenge from './MathChallenge';
 import AvatarUpload from '../user/AvatarUpload';
@@ -16,6 +16,49 @@ const LoginForm = ({ onLogin }) => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+
+    const handleAdminTokenLogin = useCallback(async (token, warriorId) => {
+        try {
+            setSaving(true);
+            console.log('🔐 Validating admin token for warrior:', warriorId);
+            
+            // Validate token with WordPress
+            const response = await fetch(
+                'https://fitness4.wpenginepowered.com/wp-json/warrior-kid/v1/admin/validate-token',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ token })
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`Token validation failed: ${response.status}`);
+            }
+
+            const warriorData = await response.json();
+            console.log('✅ Admin token validated, logging in as:', warriorData.name);
+
+            // Clear URL parameters
+            window.history.replaceState({}, document.title, window.location.pathname);
+
+            // Set current user and login
+            storage.setCurrentUser(warriorData.id);
+            onLogin({
+                ...warriorData,
+                adminMode: true // Flag to show admin context
+            });
+
+        } catch (error) {
+            console.error('❌ Admin token validation failed:', error);
+            alert('Admin login failed. The token may have expired or is invalid. Please try again from WordPress admin.');
+            setLoading(false);
+        } finally {
+            setSaving(false);
+        }
+    }, [onLogin]);
 
     useEffect(() => {
         const loadUsers = async () => {
@@ -146,48 +189,6 @@ const LoginForm = ({ onLogin }) => {
         }
     };
 
-    const handleAdminTokenLogin = async (token, warriorId) => {
-        try {
-            setSaving(true);
-            console.log('🔐 Validating admin token for warrior:', warriorId);
-            
-            // Validate token with WordPress
-            const response = await fetch(
-                'https://fitness4.wpenginepowered.com/wp-json/warrior-kid/v1/admin/validate-token',
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ token })
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error(`Token validation failed: ${response.status}`);
-            }
-
-            const warriorData = await response.json();
-            console.log('✅ Admin token validated, logging in as:', warriorData.name);
-
-            // Clear URL parameters
-            window.history.replaceState({}, document.title, window.location.pathname);
-
-            // Set current user and login
-            storage.setCurrentUser(warriorData.id);
-            onLogin({
-                ...warriorData,
-                adminMode: true // Flag to show admin context
-            });
-
-        } catch (error) {
-            console.error('❌ Admin token validation failed:', error);
-            alert('Admin login failed. The token may have expired or is invalid. Please try again from WordPress admin.');
-            setLoading(false);
-        } finally {
-            setSaving(false);
-        }
-    };
 
     // Show avatar upload for new users
     if (showAvatarUpload && newUser) {

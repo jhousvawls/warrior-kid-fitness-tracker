@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const RandomWorkoutGenerator = ({ user, onWorkoutGenerated, onCancel }) => {
     const [generatedWorkout, setGeneratedWorkout] = useState(null);
@@ -57,7 +57,7 @@ const RandomWorkoutGenerator = ({ user, onWorkoutGenerated, onCancel }) => {
     };
 
     // Generate a balanced 10-minute workout
-    const generateWorkout = () => {
+    const generateWorkout = useCallback(() => {
         setGenerating(true);
         
         setTimeout(() => {
@@ -139,7 +139,7 @@ const RandomWorkoutGenerator = ({ user, onWorkoutGenerated, onCancel }) => {
             setGeneratedWorkout(workout);
             setGenerating(false);
         }, 1500); // Simulate generation time
-    };
+    }, [user.age]);
 
     useEffect(() => {
         generateWorkout();
